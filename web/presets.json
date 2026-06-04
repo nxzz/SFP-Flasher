@@ -1,0 +1,17 @@
+{
+  "_comment": "書き込み用プリセット EEPROM。file は presets.json からの相対パス。ここに追記すればクローン書込タブの選択肢が増えます。実 SN は書込時に自動で維持されます。",
+  "presets": [
+    { "name": "Finisar FTLX8571D3BCL (10G SR)",        "file": "bin/FTLX8571D3BCL.bin",            "vendor": "FINISAR CORP.", "pn": "FTLX8571D3BCL",   "note": "10G 850nm SR" },
+    { "name": "Finisar 10G (fin-10G)",                  "file": "bin/fin-10G.bin",                  "vendor": "FINISAR CORP.", "pn": "FTLX8571D3BCL",   "note": "10G 850nm" },
+    { "name": "Allied Telesis Stack (FTLX8571 改)",     "file": "bin/FTLX8571D3BCL-AT-ScackMod.bin","vendor": "AT",            "pn": "AT-Stack0.3",     "note": "AT StackMod" },
+    { "name": "Brocade 57-0000075-01",                  "file": "bin/Brocade-57-0000075-01.bin",    "vendor": "BROCADE",       "pn": "57-0000075-01",   "note": "10G 850nm" },
+    { "name": "Cisco 8G FC (Finisar)",                  "file": "bin/cisco-8GFC.bin",               "vendor": "CISCO-FINISAR", "pn": "FTLF8528P3BCV-CS","note": "8G FC 850nm" },
+    { "name": "Cisco GLC-SX-MMD",                       "file": "bin/glc-sx-mmd.bin",               "vendor": "CISCO",         "pn": "SFBR-5716PZ",     "note": "1G 850nm SX" },
+    { "name": "Cisco SFP-H10GB-CU3M (DAC)",             "file": "bin/SFP-H10GB-CU3M.bin",           "vendor": "CISCO-MOLEX",   "pn": "74752-9520",      "note": "10G DAC 3m" },
+    { "name": "Cisco SFP10G-MFCT-80-C",                 "file": "bin/SFP10G-MFCT-80-C.bin",         "vendor": "CISCO-PRE",     "pn": "SFP10G-MFCT-80-C","note": "10G 80km" },
+    { "name": "FS SFP-10GSR-85",                        "file": "bin/fs-10G.bin",                   "vendor": "FS",            "pn": "SFP-10GSR-85",    "note": "10G 850nm SR" },
+    { "name": "FiberJP 10GBX23-10 (1270tx/1330rx)",     "file": "bin/SFP-10GBX23-10-1330tx.bin",    "vendor": "FiberJP",       "pn": "SFP-10GBX23-10",  "note": "10G BiDi 1270↑" },
+    { "name": "AT 10GBX23-10 Stack 改",                 "file": "bin/SFP-10GBX23-10-AT-StackMod.bin","vendor": "AT",           "pn": "ATP-10GBX23-10",  "note": "BiDi StackMod" },
+    { "name": "FiberJP 10GBX32-10 (1330tx/1270rx)",     "file": "bin/SFP-10GBX32-10-2-1270tx.bin",  "vendor": "FiberJP",       "pn": "SFP-10GBX32-10",  "note": "10G BiDi 1330↑" }
+  ]
+}
