@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(echo \"===main.cpp===\" && cat \"c:\\\\Users\\\\netwing\\\\Documents\\\\PlatformIO\\\\Projects\\\\sfp-eeprom-web\\\\src\\\\main.cpp\" && echo \"\" && echo \"===device tree===\" && ls -la \"d:\\\\Git_repo\\\\sfp-eerom-web\\\\device\" 2>&1; ls -la \"d:\\\\Git_repo\\\\sfp-eerom-web\" 2>&1)",
+      "Read(//d/Git_repo/sfp-eerom-web/**)",
+      "PowerShell(& \"$env:USERPROFILE\\\\.platformio\\\\penv\\\\Scripts\\\\pio.exe\" run -d \"c:\\\\Users\\\\netwing\\\\Documents\\\\PlatformIO\\\\Projects\\\\sfp-eeprom-web\" 2>&1 | Select-Object -Last 12)",
+      "PowerShell(& \"$env:USERPROFILE\\\\.platformio\\\\penv\\\\Scripts\\\\pio.exe\" run -t upload -d \"c:\\\\Users\\\\netwing\\\\Documents\\\\PlatformIO\\\\Projects\\\\sfp-eeprom-web\" 2>&1 | Select-Object -Last 25)",
+      "PowerShell(& \"$env:USERPROFILE\\\\.platformio\\\\penv\\\\Scripts\\\\pio.exe\" run -t upload -d \"c:\\\\Users\\\\netwing\\\\Documents\\\\PlatformIO\\\\Projects\\\\sfp-eeprom-web\" 2>&1 | Select-Object -Last 20)",
+      "PowerShell(& \"$env:USERPROFILE\\\\.platformio\\\\penv\\\\Scripts\\\\pio.exe\" run -d \"c:\\\\Users\\\\netwing\\\\Documents\\\\PlatformIO\\\\Projects\\\\sfp-eeprom-web\" 2>&1 | Select-Object -Last 25)",
+      "PowerShell(& \"$env:USERPROFILE\\\\.platformio\\\\penv\\\\Scripts\\\\pio.exe\" run -t upload -d \"c:\\\\Users\\\\netwing\\\\Documents\\\\PlatformIO\\\\Projects\\\\sfp-eeprom-web\" 2>&1 | Select-Object -Last 12)"
+    ]
+  }
+}

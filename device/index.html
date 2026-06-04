@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SFP EEPROM Tool (WebHID &lt;-&gt; I2C)</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 1rem; max-width: 980px; }
+  h1 { font-size: 1.3rem; }
+  h2 { font-size: 1.05rem; margin-top: 1.5rem; border-bottom: 1px solid #8884; padding-bottom: .3rem; }
+  fieldset { border: 1px solid #8886; border-radius: 8px; margin: .8rem 0; }
+  legend { font-weight: 600; }
+  label { display: inline-block; }
+  input[type=text], input[type=number] { font-family: ui-monospace, monospace; padding: .25rem .4rem; border-radius: 5px; border: 1px solid #8886; }
+  button { padding: .4rem .8rem; border-radius: 6px; border: 1px solid #8886; cursor: pointer; background: #2563eb; color: #fff; }
+  button.secondary { background: transparent; color: inherit; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .row { display: flex; gap: .8rem; flex-wrap: wrap; align-items: center; margin: .4rem 0; }
+  .pill { padding: .15rem .5rem; border-radius: 999px; font-size: .8rem; }
+  .ok { background: #16a34a; color: #fff; }
+  .bad { background: #dc2626; color: #fff; }
+  .idle { background: #6b7280; color: #fff; }
+  pre { background: #0b0f1a0d; padding: .7rem; border-radius: 8px; overflow-x: auto; font-family: ui-monospace, monospace; font-size: .82rem; }
+  table { border-collapse: collapse; font-size: .85rem; }
+  td, th { border: 1px solid #8884; padding: .25rem .5rem; text-align: left; }
+  .mono { font-family: ui-monospace, monospace; }
+  small { opacity: .7; }
+</style>
+</head>
+<body>
+<h1>SFP EEPROM Tool <small>WebHID &lt;-&gt; I2C gateway</small></h1>
+
+<div class="row">
+  <button id="connect">接続</button>
+  <button id="disconnect" class="secondary" disabled>切断</button>
+  <span id="status" class="pill idle">未接続</span>
+  <span id="fw"></span>
+</div>
+<small>Chrome / Edge など WebHID 対応ブラウザが必要です。Bus0=IO12/13(i2c0)、Bus1=IO26/27(i2c1)。</small>
+
+<fieldset>
+  <legend>バス選択</legend>
+  <div class="row">
+    <label><input type="radio" name="bus" value="0" checked> Bus 0 (IO12/13)</label>
+    <label><input type="radio" name="bus" value="1"> Bus 1 (IO26/27)</label>
+  </div>
+</fieldset>
+
+<h2>スキャン</h2>
+<div class="row">
+  <button id="scan" disabled>選択バスをスキャン</button>
+  <span id="scanResult" class="mono"></span>
+</div>
+
+<h2>読み出し (READ)</h2>
+<div class="row">
+  <label>addr 0x<input id="rAddr" type="text" size="2" value="50"></label>
+  <label>offset 0x<input id="rReg" type="text" size="2" value="00"></label>
+  <label>len <input id="rLen" type="number" min="1" max="256" value="256"></label>
+  <button id="readBtn" disabled>読む</button>
+</div>
+<pre id="readOut">—</pre>
+
+<h2>書き込み (WRITE)</h2>
+<div class="row">
+  <label>addr 0x<input id="wAddr" type="text" size="2" value="50"></label>
+  <label>offset 0x<input id="wReg" type="text" size="2" value="00"></label>
+  <label>data(hex) <input id="wData" type="text" size="40" placeholder="例: 00 11 22 ff" class="mono"></label>
+  <button id="writeBtn" disabled>書く</button>
+</div>
+<small>EEPROMは書き込み保護やページ境界があります。1回のWRITEは最大56バイト、ページ跨ぎは自動分割します。</small>
+<pre id="writeOut">—</pre>
+
+<h2>SFP 解析 (SFF-8472)</h2>
+<div class="row">
+  <label>addr 0x<input id="sAddr" type="text" size="2" value="50"></label>
+  <button id="sfpBtn" disabled>0x50 を256B読んで解析</button>
+</div>
+<div id="sfpOut"></div>
+
+<h2>ログ</h2>
+<pre id="log"></pre>
+
+<script>
+"use strict";
+const REPORT_LEN = 64;
+const CMD = { PING: 0x00, READ: 0x01, WRITE: 0x02, SCAN: 0x03 };
+const ST  = { 0:"OK", 1:"NACK(無応答)", 2:"BADARG", 3:"TOOBIG" };
+const MAX_READ_CHUNK = 60;   // 1トランザクションの読み出し上限(ファーム上限61以下)
+const MAX_WRITE_CHUNK = 56;  // 1トランザクションの書き込み上限(ファーム上限58以下)
+
+let device = null;
+let seq = 1;
+const pending = new Map(); // seq -> {resolve, reject, timer}
+
+const $ = id => document.getElementById(id);
+function log(msg) {
+  const el = $("log");
+  el.textContent += msg + "\n";
+  el.scrollTop = el.scrollHeight;
+}
+function hex(n, w = 2) { return n.toString(16).toUpperCase().padStart(w, "0"); }
+function selectedBus() { return Number(document.querySelector('input[name=bus]:checked').value); }
+function setConnected(on) {
+  $("connect").disabled = on;
+  $("disconnect").disabled = !on;
+  for (const id of ["scan","readBtn","writeBtn","sfpBtn"]) $(id).disabled = !on;
+  const s = $("status");
+  s.textContent = on ? "接続中" : "未接続";
+  s.className = "pill " + (on ? "ok" : "idle");
+  if (!on) $("fw").textContent = "";
+}
+
+// --- HID 通信ヘルパ -----------------------------------------------------
+function sendCommand(cmd, { bus = 0, addr = 0, reg = 0, len = 0, data = [] } = {}) {
+  return new Promise((resolve, reject) => {
+    if (!device || !device.opened) return reject(new Error("未接続"));
+    const s = seq++ & 0xff;
+    const out = new Uint8Array(REPORT_LEN);
+    out[0] = s; out[1] = cmd; out[2] = bus; out[3] = addr; out[4] = reg; out[5] = len;
+    for (let i = 0; i < data.length && i < REPORT_LEN - 6; i++) out[6 + i] = data[i];
+    const timer = setTimeout(() => { pending.delete(s); reject(new Error("タイムアウト")); }, 2000);
+    pending.set(s, { resolve, reject, timer });
+    device.sendReport(0, out).catch(err => { clearTimeout(timer); pending.delete(s); reject(err); });
+  });
+}
+
+function onInputReport(event) {
+  const d = new Uint8Array(event.data.buffer);
+  const s = d[0], status = d[1], len = d[2];
+  const p = pending.get(s);
+  if (!p) return;
+  clearTimeout(p.timer);
+  pending.delete(s);
+  p.resolve({ status, len, data: d.slice(3, 3 + len) });
+}
+
+// READ をチャンク分割して任意長読む
+async function readBytes(bus, addr, reg, len) {
+  const buf = new Uint8Array(len);
+  let off = 0;
+  while (off < len) {
+    const n = Math.min(MAX_READ_CHUNK, len - off);
+    const r = await sendCommand(CMD.READ, { bus, addr, reg: (reg + off) & 0xff, len: n });
+    if (r.status !== 0) throw new Error("READ失敗 @0x" + hex(addr) + " off=0x" + hex(reg + off) + " : " + ST[r.status]);
+    buf.set(r.data.slice(0, n), off);
+    off += n;
+  }
+  return buf;
+}
+
+// WRITE をページ境界(8B)とチャンク上限で分割して書く
+async function writeBytes(bus, addr, reg, bytes) {
+  const PAGE = 8; // 24Cxx系の典型ページサイズ。境界を跨がないよう分割
+  let off = 0;
+  while (off < bytes.length) {
+    const cur = (reg + off) & 0xff;
+    const toPageEnd = PAGE - (cur % PAGE);
+    const n = Math.min(MAX_WRITE_CHUNK, toPageEnd, bytes.length - off);
+    const chunk = Array.from(bytes.slice(off, off + n));
+    const r = await sendCommand(CMD.WRITE, { bus, addr, reg: cur, len: n, data: chunk });
+    if (r.status !== 0) throw new Error("WRITE失敗 @0x" + hex(addr) + " off=0x" + hex(cur) + " : " + ST[r.status]);
+    off += n;
+  }
+}
+
+function parseHexBytes(str) {
+  const toks = str.trim().split(/[\s,]+/).filter(Boolean);
+  return toks.map(t => {
+    const v = parseInt(t.replace(/^0x/i, ""), 16);
+    if (isNaN(v) || v < 0 || v > 255) throw new Error("不正なhex: " + t);
+    return v;
+  });
+}
+
+function hexDump(bytes, base = 0) {
+  let out = "";
+  for (let i = 0; i < bytes.length; i += 16) {
+    const row = bytes.slice(i, i + 16);
+    const addr = hex(base + i, 4);
+    const hexp = Array.from(row).map(b => hex(b)).join(" ").padEnd(16 * 3 - 1, " ");
+    const asc = Array.from(row).map(b => (b >= 0x20 && b < 0x7f) ? String.fromCharCode(b) : ".").join("");
+    out += addr + "  " + hexp + "  |" + asc + "|\n";
+  }
+  return out;
+}
+
+// --- UI ハンドラ --------------------------------------------------------
+$("connect").addEventListener("click", async () => {
+  try {
+    const filters = [{ usagePage: 0xff00 }];
+    const devices = await navigator.hid.requestDevice({ filters });
+    if (!devices.length) { log("デバイスが選択されませんでした"); return; }
+    device = devices[0];
+    if (!device.opened) await device.open();
+    device.addEventListener("inputreport", onInputReport);
+    setConnected(true);
+    log("接続: " + device.productName);
+    const r = await sendCommand(CMD.PING);
+    if (r.status === 0 && r.len >= 2) {
+      $("fw").textContent = "FW v" + r.data[0] + "." + r.data[1];
+      log("PING OK, FW v" + r.data[0] + "." + r.data[1]);
+    }
+  } catch (e) { log("接続エラー: " + e.message); }
+});
+
+$("disconnect").addEventListener("click", async () => {
+  try { if (device && device.opened) await device.close(); } catch {}
+  device = null;
+  setConnected(false);
+  log("切断しました");
+});
+
+$("scan").addEventListener("click", async () => {
+  try {
+    const bus = selectedBus();
+    const r = await sendCommand(CMD.SCAN, { bus });
+    if (r.status !== 0) { $("scanResult").textContent = "エラー: " + ST[r.status]; return; }
+    const addrs = Array.from(r.data).map(a => "0x" + hex(a));
+    $("scanResult").textContent = addrs.length ? ("検出: " + addrs.join(", ")) : "デバイスなし";
+    log("SCAN bus" + bus + " -> " + ($("scanResult").textContent));
+  } catch (e) { log("SCANエラー: " + e.message); }
+});
+
+$("readBtn").addEventListener("click", async () => {
+  try {
+    const bus = selectedBus();
+    const addr = parseInt($("rAddr").value, 16);
+    const reg = parseInt($("rReg").value, 16);
+    const len = Math.max(1, Math.min(256, Number($("rLen").value)));
+    const bytes = await readBytes(bus, addr, reg, len);
+    $("readOut").textContent = hexDump(bytes, reg);
+    log("READ bus" + bus + " 0x" + hex(addr) + " off=0x" + hex(reg) + " len=" + len + " OK");
+  } catch (e) { $("readOut").textContent = "エラー: " + e.message; log(e.message); }
+});
+
+$("writeBtn").addEventListener("click", async () => {
+  try {
+    const bus = selectedBus();
+    const addr = parseInt($("wAddr").value, 16);
+    const reg = parseInt($("wReg").value, 16);
+    const bytes = Uint8Array.from(parseHexBytes($("wData").value));
+    if (!bytes.length) throw new Error("書き込みデータが空です");
+    await writeBytes(bus, addr, reg, bytes);
+    $("writeOut").textContent = bytes.length + " バイト書き込み完了 @0x" + hex(addr) + " off=0x" + hex(reg);
+    log("WRITE bus" + bus + " 0x" + hex(addr) + " off=0x" + hex(reg) + " " + bytes.length + "B OK");
+  } catch (e) { $("writeOut").textContent = "エラー: " + e.message; log(e.message); }
+});
+
+// --- SFP (SFF-8472) 解析 ------------------------------------------------
+function ascii(bytes, from, to) {
+  let s = "";
+  for (let i = from; i <= to; i++) s += (bytes[i] >= 0x20 && bytes[i] < 0x7f) ? String.fromCharCode(bytes[i]) : "";
+  return s.trim();
+}
+const CONNECTORS = { 0x07:"LC", 0x0B:"Optical Pigtail", 0x21:"Copper Pigtail", 0x22:"RJ45" };
+const IDENTIFIERS = { 0x00:"Unknown", 0x01:"GBIC", 0x02:"Module/connector soldered", 0x03:"SFP/SFP+" };
+
+$("sfpBtn").addEventListener("click", async () => {
+  try {
+    const bus = selectedBus();
+    const addr = parseInt($("sAddr").value, 16);
+    const b = await readBytes(bus, addr, 0, 256);
+    const wl = (b[60] << 8) | b[61];
+    const rows = [
+      ["Identifier",  (IDENTIFIERS[b[0]] || "0x" + hex(b[0]))],
+      ["Connector",   (CONNECTORS[b[2]] || "0x" + hex(b[2]))],
+      ["Vendor name", ascii(b, 20, 35)],
+      ["Vendor OUI",  hex(b[37]) + "-" + hex(b[38]) + "-" + hex(b[39])],
+      ["Vendor PN",   ascii(b, 40, 55)],
+      ["Vendor Rev",  ascii(b, 56, 59)],
+      ["Wavelength",  wl ? (wl + " nm") : "-"],
+      ["Vendor SN",   ascii(b, 68, 83)],
+      ["Date code",   ascii(b, 84, 91)],
+    ];
+    let html = "<table><tbody>";
+    for (const [k, v] of rows) html += "<tr><th>" + k + "</th><td class='mono'>" + (v || "-") + "</td></tr>";
+    html += "</tbody></table>";
+    html += "<h3 style='font-size:.9rem'>RAW (0x00-0xFF)</h3><pre>" + hexDump(b, 0) + "</pre>";
+    $("sfpOut").innerHTML = html;
+    log("SFP解析 OK: " + ascii(b, 20, 35) + " / " + ascii(b, 40, 55));
+  } catch (e) { $("sfpOut").textContent = "エラー: " + e.message; log(e.message); }
+});
+
+if (!("hid" in navigator)) {
+  $("status").textContent = "WebHID非対応ブラウザ";
+  $("status").className = "pill bad";
+  $("connect").disabled = true;
+}
+</script>
+</body>
+</html>
