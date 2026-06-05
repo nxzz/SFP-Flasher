@@ -71,7 +71,7 @@
   button.ghost { background: transparent; color: var(--accent2); border-color: transparent; padding: .4rem .5rem; }
   button:disabled { opacity: .45; cursor: not-allowed; }
 
-  input[type=text], input[type=number], input[type=file], select {
+  input[type=text], input[type=number], input[type=search], input[type=file], select {
     font-family: var(--mono); padding: .5rem .55rem; border-radius: 8px;
     border: 1px solid var(--line); background: var(--card2); color: var(--fg);
     font-size: .9rem; min-height: 40px;
@@ -127,7 +127,7 @@
   @media (max-width: 560px) {
     .row { gap: .5rem; }
     .field { flex: 1 1 100%; }
-    input[type=text], input[type=number], select { width: 100%; }
+    input[type=text], input[type=number], input[type=search], select { width: 100%; }
     section.card { padding: .85rem; }
   }
 </style>
@@ -181,10 +181,10 @@
 
   <!-- ============ CLONE ============ -->
   <section class="card panel" data-panel="clone">
-    <h2>🧬 クローン書込 <span class="badge">実 SN 維持</span></h2>
+    <h2>🧬 クローン書込 <span class="badge">実 SN・製造日 維持</span></h2>
     <p class="desc">
-      選んだ EEPROM 像でモジュールを上書きしますが、<b>そのモジュール本来のシリアル番号(0x44–0x53)は維持</b>します。
-      チェックサムは自動再計算し、書込前にアンロック、書込後にベリファイします（modsn.sh 相当）。
+      選んだ EEPROM 像でモジュールを上書きしますが、<b>そのモジュール本来のシリアル番号(0x44–0x53)と製造日(0x54–0x5B)は維持</b>します。
+      チェックサムは自動再計算し、書込前にアンロック、書込後にベリファイします。
     </p>
     <div class="note">⚠️ EEPROM を上書きします。先に「ダンプ / 解析」でバックアップを取得してください。</div>
 
@@ -204,8 +204,13 @@
         </div>
       </div>
       <div class="row center" id="presetRow">
-        <label class="field grow"><span>プリセット(presets.json)</span>
-          <select id="presetSel"><option>読込中...</option></select>
+        <label class="field grow"><span>プリセット検索</span>
+          <input id="presetSearch" type="search" placeholder="ベンダー / PN / 名称で絞り込み（スペース区切りでAND）" autocomplete="off">
+        </label>
+      </div>
+      <div class="row center" id="presetRow2">
+        <label class="field grow"><span>プリセット(presets.json) <span id="presetCount" class="hint"></span></span>
+          <select id="presetSel" size="8"><option>読込中...</option></select>
         </label>
       </div>
       <div class="row center" id="uploadRow" style="display:none">
@@ -232,7 +237,7 @@
     <pre id="cloneOut" class="out">—</pre>
 
     <hr class="sep">
-    <h3 class="sub">🔁 自動連続書込 <span class="badge">loop.sh</span></h3>
+    <h3 class="sub">🔁 自動連続書込</h3>
     <p class="hint">挿入を待機 → 実SN維持で書込 → 抜去を待機、を繰り返します。モジュールを差し替えるだけで連続クローンできます。</p>
     <div class="row center">
       <button id="loopStart" disabled>自動連続を開始</button>
@@ -245,7 +250,7 @@
   <!-- ============ DWDM ============ -->
   <section class="card panel" data-panel="dwdm">
     <h2>📡 DWDM 波長設定 <span class="badge">tunable</span></h2>
-    <p class="desc">チューナブル SFP の ITU グリッドチャンネルを設定します。0x51 のページを 2 に切替え、freq×20 を レジスタ 146/147 に書き込みます（set-dwdm-ch.py 相当）。</p>
+    <p class="desc">チューナブル SFP の ITU グリッドチャンネルを設定します。0x51 のページを 2 に切替え、freq×20 を レジスタ 146/147 に書き込みます。</p>
     <div class="row center">
       <label class="field" style="flex-direction:row;align-items:center;gap:.5rem"><span>バス</span>
         <select id="busDwdm"><option value="0">Bus 0 (IO12/13)</option><option value="1">Bus 1 (IO26/27)</option></select>
@@ -566,14 +571,8 @@ async function loadPresets() {
     if (!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();
     presets = json.presets || [];
-    sel.innerHTML = "";
-    presets.forEach((p, i) => {
-      const o = document.createElement("option");
-      o.value = String(i);
-      o.textContent = p.name + (p.note ? `  — ${p.note}` : "");
-      sel.appendChild(o);
-    });
-    if (presets.length) { sel.selectedIndex = 0; await onPresetChange(); }
+    renderPresetOptions("");
+    if (presets.length) { await onPresetChange(); }
     log(`プリセット ${presets.length} 件を読込`);
   } catch (e) {
     sel.innerHTML = '<option value="">(プリセット読込不可)</option>';
@@ -582,6 +581,48 @@ async function loadPresets() {
       + `file:// では読込できないため、ローカルではサーバ起動（例 <code>npx serve</code>）か「アップロード」をご利用ください。</span>`;
     log("プリセット読込失敗: " + e.message);
   }
+}
+/* ベンダー別 optgroup + 検索でプリセット候補を描画 */
+function renderPresetOptions(query) {
+  const sel = $("presetSel");
+  const prev = sel.value;                       // 現在の選択(=presets index) を保持
+  const terms = (query || "").toLowerCase().split(/\s+/).filter(Boolean);
+  const match = p => {
+    if (!terms.length) return true;
+    const hay = `${p.name} ${p.vendor||""} ${p.pn||""} ${p.note||""}`.toLowerCase();
+    return terms.every(t => hay.includes(t));
+  };
+  // curated(bin/lib/ 以外) を先頭グループに、残りはベンダー別
+  const groups = new Map();                      // label -> [{i,p}]
+  const CURATED = "★ 厳選";
+  presets.forEach((p, i) => {
+    if (!match(p)) return;
+    const label = (p.file && !p.file.includes("bin/lib/")) ? CURATED : (p.vendor || "(ベンダー不明)");
+    if (!groups.has(label)) groups.set(label, []);
+    groups.get(label).push({ i, p });
+  });
+  const labels = [...groups.keys()].sort((a, b) =>
+    a === CURATED ? -1 : b === CURATED ? 1 : a.localeCompare(b));
+  sel.innerHTML = "";
+  let shown = 0;
+  for (const label of labels) {
+    const og = document.createElement("optgroup");
+    og.label = `${label} (${groups.get(label).length})`;
+    for (const { i, p } of groups.get(label)) {
+      const o = document.createElement("option");
+      o.value = String(i);
+      o.textContent = p.name + (p.note ? `  — ${p.note}` : "");
+      og.appendChild(o);
+      shown++;
+    }
+    sel.appendChild(og);
+  }
+  $("presetCount").textContent = terms.length ? `${shown} / ${presets.length} 件` : `全 ${presets.length} 件`;
+  // 選択の維持: 旧選択がまだ候補に居れば維持、居なければ先頭を選び直して読込
+  const stillThere = prev !== "" && [...sel.options].some(o => o.value === prev);
+  if (stillThere) { sel.value = prev; return false; }
+  if (sel.options.length) { sel.selectedIndex = 0; return true; }   // 要再読込
+  return false;
 }
 async function onPresetChange() {
   const i = Number($("presetSel").value);
@@ -613,6 +654,7 @@ document.querySelectorAll('input[name=src]').forEach(r => r.addEventListener("ch
   $("segUpload").classList.toggle("on", mode === "upload");
   $("segBus").classList.toggle("on", mode === "bus");
   $("presetRow").style.display = mode === "preset" ? "" : "none";
+  $("presetRow2").style.display = mode === "preset" ? "" : "none";
   $("uploadRow").style.display = mode === "upload" ? "" : "none";
   $("busRow").style.display    = mode === "bus"    ? "" : "none";
   srcBytes = null; $("srcPreview").innerHTML = "";
@@ -635,6 +677,10 @@ $("copyReadBtn").addEventListener("click", async () => {
   refreshCloneButtons();
 });
 $("presetSel").addEventListener("change", onPresetChange);
+$("presetSearch").addEventListener("input", async (e) => {
+  const needReload = renderPresetOptions(e.target.value);   // 先頭を選び直したら bin 再読込
+  if (needReload) await onPresetChange();
+});
 $("cloneFile").addEventListener("change", async () => {
   try {
     srcBytes = await fileToBytes($("cloneFile"));
@@ -643,9 +689,10 @@ $("cloneFile").addEventListener("change", async () => {
   refreshCloneButtons();
 });
 
-/* org の SN(68..83) を base に移植してチェックサム再計算 */
+/* org の SN(68..83) と 製造日(84..91) を base に移植してチェックサム再計算 */
 function mergeSnInto(base, org) {
-  for (let i = 68; i <= 83; i++) base[i] = org[i];
+  for (let i = 68; i <= 83; i++) base[i] = org[i];   // 実 SN(0x44–0x53)
+  for (let i = 84; i <= 91; i++) base[i] = org[i];   // 製造日(0x54–0x5B)
   fixChecksum(base);
   return base;
 }
