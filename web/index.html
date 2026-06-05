@@ -150,6 +150,7 @@
       <button data-tab="dump" class="active">ダンプ / 解析</button>
       <button data-tab="clone">クローン書込</button>
       <button data-tab="dwdm">DWDM 波長</button>
+      <button data-tab="avago">Avago Mailbox</button>
     </nav>
   </div>
 </header>
@@ -268,6 +269,99 @@
     <pre id="dwdmOut" class="out">—</pre>
   </section>
 
+  <!-- ============ AVAGO HIDDEN MAILBOX ============ -->
+  <section class="card panel" data-panel="avago">
+    <h2>🔓 Avago 隠し Mailbox <span class="badge">検証用</span></h2>
+    <p class="desc">
+      Avago/Broadcom 系モジュールの hidden mailbox（B0 ページ = <code>0x58</code>）経由で内部 EEPROM を読み書きします。
+      コマンドは <code>0x76</code> から 5 バイトを <b>1 トランザクション</b>で送ります（ページ境界 <code>0x78</code> を跨ぐため通常の分割書込は不可）。
+    </p>
+    <div class="note danger">
+      ⚠️ 低レベル検証ツールです。内部 EEPROM を直接書き換えます。前提として内部 EEPROM <code>0x01FF == 0x55</code> が必要で、
+      ファームが起動時にこれを読み <code>0x0336</code> に入れ、<code>0x55</code> のときだけ hidden command handler を有効化します。
+      外部から <code>0x58</code> が見えない個体ではホスト側から叩けません。
+    </div>
+
+    <div class="row center" style="margin-top:.8rem">
+      <label class="field" style="flex-direction:row;align-items:center;gap:.5rem"><span>バス</span>
+        <select id="busAvago"><option value="0">Bus 0 (IO12/13)</option><option value="1">Bus 1 (IO26/27)</option></select>
+      </label>
+      <label class="field" style="flex-direction:row;align-items:center;gap:.5rem"><span>Mailbox アドレス</span>
+        <select id="avBase"><option value="0x58">0x58 (B0)</option><option value="0x5a">0x5A (B4)</option></select>
+      </label>
+      <label class="field" style="flex-direction:row;align-items:center;gap:.5rem"><span>処理後待ち</span>
+        <input id="avWait" type="number" value="10" min="0" max="500" style="width:5rem"><span class="hint">ms</span>
+      </label>
+      <button id="avScan" class="secondary" disabled>可視性チェック (SCAN)</button>
+    </div>
+
+    <hr class="sep">
+    <h3 class="sub">⓪ 前提チェック — 内部 EEPROM 0x01FF</h3>
+    <p class="hint">hidden handler の有効条件。0x52 で <code>0x01FF</code> を読み、<code>0x55</code> かどうかを確認します。</p>
+    <div class="row center">
+      <button id="avCheckPre" disabled>0x01FF を読む</button>
+      <button id="avSetPre" class="danger" disabled>0x01FF = 0x55 に設定</button>
+      <span id="avPreInfo" class="hint"></span>
+    </div>
+
+    <hr class="sep">
+    <h3 class="sub">① セッション (enable / disable)</h3>
+    <div class="row center">
+      <button id="avEnable" disabled>enable 0x51</button>
+      <button id="avDisable" class="secondary" disabled>disable / exit 0x50</button>
+      <span id="avSessInfo" class="hint"></span>
+    </div>
+
+    <hr class="sep">
+    <h3 class="sub">② 1 バイト read / write (0x52 / 0x53)</h3>
+    <div class="row center">
+      <label class="field"><span>内部 EEPROM アドレス (16bit hex)</span>
+        <input id="av1Addr" type="text" value="0x0123" size="8" style="width:7rem">
+      </label>
+      <label class="field"><span>書込値 (8bit hex)</span>
+        <input id="av1Val" type="text" value="0x45" size="5" style="width:5rem">
+      </label>
+      <button id="avRd1" disabled>read 0x52</button>
+      <button id="avWr1" class="danger" disabled>write 0x53</button>
+    </div>
+    <pre id="av1Out" class="out">—</pre>
+
+    <hr class="sep">
+    <h3 class="sub">③ 128 バイトブロック (0x5B / 0x5C ⇄ A2:0x80–0xFF)</h3>
+    <p class="hint">
+      <code>0x5B</code>: 内部 EEPROM 128B → <code>A2:0x80–0xFF</code> に展開して下に表示。
+      <code>0x5C</code>: 下のバッファを <code>A2:0x80–0xFF</code> へ書いてから内部 EEPROM へ反映。
+    </p>
+    <div class="row center">
+      <label class="field"><span>内部 EEPROM 先頭アドレス (16bit hex)</span>
+        <input id="avBlkAddr" type="text" value="0x0081" size="8" style="width:7rem">
+      </label>
+      <button id="avRd128" disabled>EEPROM→A2 読出 (0x5B)</button>
+      <button id="avReadBuf" class="secondary" disabled>A2:0x80–0xFF を再読込</button>
+      <button id="avWr128" class="danger" disabled>A2→EEPROM 書込 (0x5C)</button>
+    </div>
+    <label class="field" style="margin-top:.5rem"><span>A2:0x80–0xFF バッファ (128 バイト hex / 0x5C の書込元)</span>
+      <textarea id="avBuf" rows="9" spellcheck="false"
+        style="font-family:var(--mono);font-size:.78rem;padding:.5rem;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--fg);width:100%;resize:vertical"></textarea>
+    </label>
+    <div class="row center">
+      <button id="avBufFromText" class="secondary" disabled>テキスト→A2 へ書込</button>
+      <span id="avBlkInfo" class="hint"></span>
+    </div>
+
+    <hr class="sep">
+    <h3 class="sub">④ 任意コマンド (raw)</h3>
+    <p class="hint">5 バイトを直接送ります: <code>w5@base 0x76 cmd addr_hi addr_lo value</code> → status(0x7A) / result(0x79) を読みます。</p>
+    <div class="row center">
+      <label class="field"><span>cmd</span><input id="avRawCmd" type="text" value="0x52" style="width:5rem"></label>
+      <label class="field"><span>addr_hi</span><input id="avRawHi" type="text" value="0x01" style="width:5rem"></label>
+      <label class="field"><span>addr_lo</span><input id="avRawLo" type="text" value="0xFF" style="width:5rem"></label>
+      <label class="field"><span>value</span><input id="avRawVal" type="text" value="0x00" style="width:5rem"></label>
+      <button id="avRawSend" disabled>送信</button>
+    </div>
+    <pre id="avRawOut" class="out">—</pre>
+  </section>
+
   <!-- ============ LOG ============ -->
   <section class="card">
     <h2>📜 ログ <button id="logClear" class="ghost" style="font-size:.78rem">クリア</button></h2>
@@ -336,14 +430,16 @@ function hex(n, w = 2) { return n.toString(16).toUpperCase().padStart(w, "0"); }
 function selectedBus() {
   const active = document.querySelector(".panel.active");
   const tab = active ? active.dataset.panel : "dump";
-  const id = tab === "clone" ? "busClone" : tab === "dwdm" ? "busDwdm" : "busDump";
+  const id = tab === "clone" ? "busClone" : tab === "dwdm" ? "busDwdm" : tab === "avago" ? "busAvago" : "busDump";
   return Number($(id).value);
 }
 
 function setConnected(on) {
   $("connect").disabled = on;
   $("disconnect").disabled = !on;
-  for (const id of ["dumpBtn","dwdmBtn","dwdmReadBtn","copyReadBtn"]) $(id).disabled = !on;
+  for (const id of ["dumpBtn","dwdmBtn","dwdmReadBtn","copyReadBtn",
+    "avScan","avCheckPre","avSetPre","avEnable","avDisable","avRd1","avWr1",
+    "avRd128","avReadBuf","avWr128","avBufFromText","avRawSend"]) $(id).disabled = !on;
   refreshCloneButtons();
   const s = $("status");
   s.textContent = on ? "接続中" : "未接続";
@@ -412,10 +508,14 @@ async function scan(bus) {
   if (r.status !== 0) throw new Error("SCAN失敗: " + ST[r.status]);
   return Array.from(r.data);
 }
-/* unlock.sh: 0x51 の 0x7B-0x7E に 0x00 */
-async function unlock(bus) {
-  for (const reg of [0x7B, 0x7C, 0x7D, 0x7E]) {
-    await writeBytes(bus, A2, reg, Uint8Array.of(0x00));
+/* unlock.sh: 0x51 の 0x7B-0x7E にパスワード4バイトを書込む
+ * 第1候補=0(全0)、ダメな場合の第2候補=Finisar の 9B B0 3D FA */
+const PW_ZERO    = [0x00, 0x00, 0x00, 0x00];
+const PW_FINISAR = [0x9B, 0xB0, 0x3D, 0xFA];
+async function unlock(bus, pw = PW_ZERO) {
+  const regs = [0x7B, 0x7C, 0x7D, 0x7E];
+  for (let i = 0; i < regs.length; i++) {
+    await writeBytes(bus, A2, regs[i], Uint8Array.of(pw[i]));
   }
 }
 
@@ -702,12 +802,21 @@ async function cloneToModule(bus, src) {
   const org = await readBytes(bus, A0, 0, src.length);
   const sn = ascii(org, 68, 83);
   const merged = mergeSnInto(src.slice(), org);
-  await unlock(bus);
-  await writeBytes(bus, A0, 0, merged);
-  const rb = await readBytes(bus, A0, 0, src.length);
-  let diff = 0; for (let i = 0; i < src.length; i++) if (rb[i] !== merged[i]) diff++;
+
+  /* パスワード 0 → ダメなら Finisar(9BB03DFA) で再試行 */
+  let rb, diff, pwUsed = "0";
+  for (const [label, pw] of [["0", PW_ZERO], ["9BB03DFA", PW_FINISAR]]) {
+    await unlock(bus, pw);
+    await writeBytes(bus, A0, 0, merged);
+    rb = await readBytes(bus, A0, 0, src.length);
+    diff = 0; for (let i = 0; i < src.length; i++) if (rb[i] !== merged[i]) diff++;
+    pwUsed = label;
+    if (diff === 0) break;        // 一致したらこのパスワードで確定
+    log(`PW=${label} で不一致(${diff}B)`);
+  }
+
   const c = calcChecksum(rb);
-  return { sn, diff, summary: sffSummary(rb), ck: c };
+  return { sn, diff, pwUsed, summary: sffSummary(rb), ck: c };
 }
 $("cloneBtn").addEventListener("click", async () => {
   if (!device || !srcBytes) return;
@@ -718,7 +827,7 @@ $("cloneBtn").addEventListener("click", async () => {
     $("cloneOut").textContent =
       `クローン完了（実 SN「${r.sn}」維持）\n`
       + `Vendor: ${r.summary.vendor}  PN: ${r.summary.pn}\n`
-      + `ベリファイ: ${r.diff === 0 ? "全一致 OK" : r.diff + " バイト不一致"}\n`
+      + `ベリファイ: ${r.diff === 0 ? `全一致 OK (PW=${r.pwUsed})` : r.diff + " バイト不一致"}\n`
       + `CC_BASE ${r.ck.baseOk ? "OK" : "NG"} / CC_EXT ${r.ck.extOk ? "OK" : "NG"}`;
     log(`CLONE 完了 SN=${r.sn} diff=${r.diff}`);
   } catch (e) { $("cloneOut").textContent = "エラー: " + e.message; log(e.message); }
@@ -753,7 +862,7 @@ $("loopStart").addEventListener("click", async () => {
       $("loopOut").textContent =
         `#${count} 書込完了 SN=${r.sn}  ベリファイ:${r.diff === 0 ? "OK" : r.diff + "B不一致"}\n`
         + `モジュールを差し替えてください(抜去待ち)...`;
-      log(`LOOP #${count} SN=${r.sn} diff=${r.diff}`);
+      log(`LOOP #${count} SN=${r.sn} diff=${r.diff} PW=${r.pwUsed}`);
       if (!await waitForPresence(bus, false)) break;
     }
   } catch (e) { $("loopOut").textContent = "エラー: " + e.message; log(e.message); }
@@ -853,6 +962,204 @@ $("dwdmBtn").addEventListener("click", async () => {
       + `Vendor: ${s.vendor}  PN: ${s.pn}  SN: ${s.sn}`;
     log(`DWDM CH${ch} ${v}nm 書込 OK`);
   } catch (e) { $("dwdmOut").textContent = "エラー: " + e.message; log(e.message); }
+});
+
+/* =====================================================================
+ *  ④ Avago 隠し Mailbox (B0 ページ = 0x58) — 検証用
+ *  コマンドは 0x76 から 5 バイトを 1 トランザクションで送る。
+ *  通常の writeBytes() は 8 バイトページ境界(0x78)で分割するため使えない。
+ * ===================================================================== */
+const MB  = { CMD: 0x76, AHI: 0x77, ALO: 0x78, VAL: 0x79, ST: 0x7A };
+const AV  = { ENABLE: 0x51, RD1: 0x52, WR1: 0x53, RD128: 0x5B, WR128: 0x5C, DISABLE: 0x50 };
+
+function parseHex(s, mask) {
+  const n = parseInt(String(s).trim().replace(/^0x/i, ""), 16);
+  if (Number.isNaN(n)) throw new Error(`16進数として解釈できません: "${s}"`);
+  return n & mask;
+}
+const hexByte = s => parseHex(s, 0xff);
+const hex16   = s => parseHex(s, 0xffff);
+function avBase() { return parseHex($("avBase").value, 0xff); }
+function avWaitMs() { const n = Number($("avWait").value); return Number.isFinite(n) && n >= 0 ? n : 10; }
+function avStatusText(st) {
+  if (st === 0x00) return "OK (0x00)";
+  if (st === 0xff) return "ERROR (0xFF)";
+  if (st === 0xfe) return "I2C下位失敗 (0xFE)";
+  return "0x" + hex(st);
+}
+function avEquiv(base, cmd, hi, lo, val) {
+  return `i2ctransfer -y BUS w5@0x${hex(base)} 0x76 0x${hex(cmd)} 0x${hex(hi)} 0x${hex(lo)} 0x${hex(val)}`;
+}
+
+/* 分割せずに 1 トランザクションで WRITE（mailbox コマンド用） */
+async function writeRaw(bus, addr, reg, bytes) {
+  if (bytes.length > MAX_WRITE_CHUNK) throw new Error(`raw write は最大 ${MAX_WRITE_CHUNK} バイト`);
+  const r = await sendCommand(CMD.WRITE, { bus, addr, reg, len: bytes.length, data: Array.from(bytes) });
+  if (r.status !== 0) throw new Error(`WRITE失敗 @0x${hex(addr)} reg=0x${hex(reg)} : ${ST[r.status]}`);
+}
+
+/* mailbox コマンドを 1 回実行 → {st, val, raw} を返す（status と result を併読） */
+async function mbCmd(bus, base, cmd, hi = 0, lo = 0, val = 0) {
+  log("AVAGO " + avEquiv(base, cmd, hi, lo, val));
+  await writeRaw(bus, base, MB.CMD, [cmd, hi, lo, val]);
+  await sleep(avWaitMs());
+  const d = await readBytes(bus, base, MB.VAL, 2);   // 0x79=value, 0x7A=status（同一ページ内）
+  return { val: d[0], st: d[1] };
+}
+
+/* ---------- 可視性チェック ---------- */
+$("avScan").addEventListener("click", async () => {
+  try {
+    const bus = selectedBus(), base = avBase();
+    const found = await scan(bus);
+    const hit = found.includes(base);
+    const list = found.map(a => "0x" + hex(a)).join(" ") || "(なし)";
+    $("avSessInfo").textContent =
+      `${hit ? "✅ 0x" + hex(base) + " 検出" : "❌ 0x" + hex(base) + " は不可視"} / SCAN: ${list}`;
+    log(`AVAGO SCAN bus${bus}: ${list}`);
+  } catch (e) { $("avSessInfo").textContent = "エラー: " + e.message; log(e.message); }
+});
+
+/* ---------- 前提チェック 0x01FF ---------- */
+$("avCheckPre").addEventListener("click", async () => {
+  try {
+    const bus = selectedBus(), base = avBase();
+    const r = await mbCmd(bus, base, AV.RD1, 0x01, 0xFF, 0x00);
+    const ok55 = r.st === 0x00 && r.val === 0x55;
+    $("avPreInfo").textContent =
+      `0x01FF = 0x${hex(r.val)} / status ${avStatusText(r.st)} → ` +
+      (ok55 ? "✅ 0x55（handler 有効条件OK）" : "⚠️ 0x55 ではありません");
+    log(`AVAGO 0x01FF=0x${hex(r.val)} st=0x${hex(r.st)}`);
+  } catch (e) { $("avPreInfo").textContent = "エラー: " + e.message; log(e.message); }
+});
+$("avSetPre").addEventListener("click", async () => {
+  if (!confirm("内部 EEPROM 0x01FF を 0x55 に書き込みます。よろしいですか？")) return;
+  try {
+    const bus = selectedBus(), base = avBase();
+    const r = await mbCmd(bus, base, AV.WR1, 0x01, 0xFF, 0x55);
+    $("avPreInfo").textContent = `0x01FF ← 0x55 書込: status ${avStatusText(r.st)}（再起動後に有効化される場合あり）`;
+    log(`AVAGO write 0x01FF=0x55 st=0x${hex(r.st)}`);
+  } catch (e) { $("avPreInfo").textContent = "エラー: " + e.message; log(e.message); }
+});
+
+/* ---------- セッション ---------- */
+$("avEnable").addEventListener("click", async () => {
+  try {
+    const bus = selectedBus(), base = avBase();
+    const r = await mbCmd(bus, base, AV.ENABLE);
+    $("avSessInfo").textContent = `enable(0x51): status ${avStatusText(r.st)}`;
+    log(`AVAGO enable st=0x${hex(r.st)}`);
+  } catch (e) { $("avSessInfo").textContent = "エラー: " + e.message; log(e.message); }
+});
+$("avDisable").addEventListener("click", async () => {
+  try {
+    const bus = selectedBus(), base = avBase();
+    const r = await mbCmd(bus, base, AV.DISABLE);
+    $("avSessInfo").textContent = `disable(0x50): status ${avStatusText(r.st)}`;
+    log(`AVAGO disable st=0x${hex(r.st)}`);
+  } catch (e) { $("avSessInfo").textContent = "エラー: " + e.message; log(e.message); }
+});
+
+/* ---------- 1 バイト read / write ---------- */
+$("avRd1").addEventListener("click", async () => {
+  try {
+    const bus = selectedBus(), base = avBase();
+    const a = hex16($("av1Addr").value);
+    const r = await mbCmd(bus, base, AV.RD1, (a >> 8) & 0xff, a & 0xff, 0x00);
+    $("av1Out").textContent =
+      `read 0x52  EEPROM[0x${hex(a, 4)}] = 0x${hex(r.val)} (${r.val})\n` +
+      `status ${avStatusText(r.st)}`;
+    log(`AVAGO read[0x${hex(a, 4)}]=0x${hex(r.val)} st=0x${hex(r.st)}`);
+  } catch (e) { $("av1Out").textContent = "エラー: " + e.message; log(e.message); }
+});
+$("avWr1").addEventListener("click", async () => {
+  try {
+    const bus = selectedBus(), base = avBase();
+    const a = hex16($("av1Addr").value), v = hexByte($("av1Val").value);
+    if (!confirm(`内部 EEPROM 0x${hex(a, 4)} に 0x${hex(v)} を書き込みます。よろしいですか？`)) return;
+    const r = await mbCmd(bus, base, AV.WR1, (a >> 8) & 0xff, a & 0xff, v);
+    $("av1Out").textContent =
+      `write 0x53  EEPROM[0x${hex(a, 4)}] ← 0x${hex(v)}\nstatus ${avStatusText(r.st)}`;
+    log(`AVAGO write[0x${hex(a, 4)}]=0x${hex(v)} st=0x${hex(r.st)}`);
+  } catch (e) { $("av1Out").textContent = "エラー: " + e.message; log(e.message); }
+});
+
+/* ---------- A2:0x80-0xFF バッファ表示／編集 ---------- */
+function avRenderBuf(bytes) {
+  // 0x80 起点の hexdump（オフセット表記）
+  $("avBuf").value = hexDump(bytes, 0x80).trimEnd();
+}
+function avParseBuf() {
+  // hexdump 形式（"0080  xx xx ... |....|"）でも、連続 hex でも受け付ける
+  const toks = $("avBuf").value
+    .replace(/\|[^\n]*\|/g, " ")          // ASCII 部を除去
+    .replace(/^[0-9a-fA-F]{4}\b/gm, " ")  // 行頭アドレスを除去
+    .replace(/0x/gi, " ")
+    .split(/[\s,]+/).filter(Boolean);
+  const bytes = toks.map(t => {
+    const n = parseInt(t, 16);
+    if (Number.isNaN(n) || n > 0xff) throw new Error(`バイトとして不正: "${t}"`);
+    return n;
+  });
+  if (bytes.length !== 128) throw new Error(`128 バイト必要ですが ${bytes.length} バイトです`);
+  return Uint8Array.from(bytes);
+}
+$("avReadBuf").addEventListener("click", async () => {
+  try {
+    const bus = selectedBus();
+    const b = await readBytes(bus, A2, 0x80, 128);
+    avRenderBuf(b);
+    $("avBlkInfo").textContent = "A2:0x80–0xFF を再読込しました";
+    log("AVAGO A2:0x80-0xFF 読込");
+  } catch (e) { $("avBlkInfo").textContent = "エラー: " + e.message; log(e.message); }
+});
+$("avBufFromText").addEventListener("click", async () => {
+  try {
+    const bus = selectedBus();
+    const b = avParseBuf();
+    await writeBytes(bus, A2, 0x80, b);    // A2 EEPROM はページ分割書込でOK
+    $("avBlkInfo").textContent = "テキストの 128 バイトを A2:0x80–0xFF へ書込みました";
+    log("AVAGO A2:0x80-0xFF へ 128B 書込");
+  } catch (e) { $("avBlkInfo").textContent = "エラー: " + e.message; log(e.message); }
+});
+$("avRd128").addEventListener("click", async () => {
+  try {
+    const bus = selectedBus(), base = avBase();
+    const a = hex16($("avBlkAddr").value);
+    const r = await mbCmd(bus, base, AV.RD128, (a >> 8) & 0xff, a & 0xff, 0x00);   // EEPROM→A2
+    const b = await readBytes(bus, A2, 0x80, 128);
+    avRenderBuf(b);
+    $("avBlkInfo").textContent = `0x5B: EEPROM[0x${hex(a, 4)}+128] → A2:0x80–0xFF  status ${avStatusText(r.st)}`;
+    log(`AVAGO 0x5B EEPROM[0x${hex(a, 4)}]→A2 st=0x${hex(r.st)}`);
+  } catch (e) { $("avBlkInfo").textContent = "エラー: " + e.message; log(e.message); }
+});
+$("avWr128").addEventListener("click", async () => {
+  try {
+    const bus = selectedBus(), base = avBase();
+    const a = hex16($("avBlkAddr").value);
+    if (!confirm(`A2:0x80–0xFF の 128 バイトを内部 EEPROM 0x${hex(a, 4)} 以降へ反映します。よろしいですか？`)) return;
+    const b = avParseBuf();
+    await writeBytes(bus, A2, 0x80, b);                                           // 先に A2 を埋める
+    const r = await mbCmd(bus, base, AV.WR128, (a >> 8) & 0xff, a & 0xff, 0x00);  // A2→EEPROM
+    $("avBlkInfo").textContent = `0x5C: A2:0x80–0xFF → EEPROM[0x${hex(a, 4)}+128]  status ${avStatusText(r.st)}`;
+    log(`AVAGO 0x5C A2→EEPROM[0x${hex(a, 4)}] st=0x${hex(r.st)}`);
+  } catch (e) { $("avBlkInfo").textContent = "エラー: " + e.message; log(e.message); }
+});
+
+/* ---------- 任意コマンド ---------- */
+$("avRawSend").addEventListener("click", async () => {
+  try {
+    const bus = selectedBus(), base = avBase();
+    const cmd = hexByte($("avRawCmd").value);
+    const hi  = hexByte($("avRawHi").value);
+    const lo  = hexByte($("avRawLo").value);
+    const val = hexByte($("avRawVal").value);
+    const r = await mbCmd(bus, base, cmd, hi, lo, val);
+    $("avRawOut").textContent =
+      `${avEquiv(base, cmd, hi, lo, val)}\n` +
+      `result(0x79) = 0x${hex(r.val)} (${r.val})\n` +
+      `status(0x7A) = ${avStatusText(r.st)}`;
+  } catch (e) { $("avRawOut").textContent = "エラー: " + e.message; log(e.message); }
 });
 
 /* ---------- log clear ---------- */
