@@ -10,24 +10,28 @@
    そのモジュール本来のシリアル番号(0x44–0x53)を維持。チェックサム自動再計算・アンロック・ベリファイ込み（`modsn.sh` 相当）
    - **自動連続書込** — 挿入待ち→書込→抜去待ちを反復し、差し替えるだけで連続クローン（`loop.sh` 相当）
 3. **DWDM 波長設定** — チューナブル SFP の ITU グリッドチャンネルを設定（`set-dwdm-ch.py` 相当）
-4. **Avago Mailbox（検証用）** — Avago/Broadcom 系の hidden mailbox（B0 ページ = `0x58`）経由で
-   内部 EEPROM を読み書きする低レベル検証ツール（下記参照）
+4. **Avago ISP 書換** — `device-avago-isp` ボード（FW v2.x）で Avago/Broadcom 内蔵 ATmega328 を
+   ISP(SPI) 経由で直接読み書きする専用タブ（下記参照）
 
-## Avago 隠し Mailbox（検証用タブ）
+## Avago ISP 書換（device-avago-isp 専用ボード）
 
-Avago/Broadcom 系モジュールは通常の `0x51` アンロックとは別経路で、hidden mailbox 経由で内部
-EEPROM を書き換えます。本タブはその手順を GUI から検証するためのものです。
+Avago/Broadcom 系モジュールは内部 ATmega が EEPROM を読取専用にエミュレートしており、I2C(0x50)からは
+書き込めません（隠し mailbox もプログラミングゲートも存在しない個体がある）。そこで本タブは、
+`device-avago-isp` ボード（FW v2.x）を使い、内蔵 ATmega328 の EEPROM を **ISP(SPI シリアルプログラミング)** で
+**直接**書き換えます。
 
-- アドレス（7bit）: A2 = `0x51` / B0 = `0x58` / B4 = `0x5A`
-- **前提**: 内部 EEPROM `0x01FF == 0x55`。ファームが起動時に読み `0x0336` に入れ、`0x55` のときだけ
-  hidden command handler を有効化します。外部から `0x58` が見えない個体はホストから叩けません。
-- コマンド mailbox: `B0:0x76`=command / `0x77`=addr_hi / `0x78`=addr_lo / `0x79`=value・result / `0x7A`=status
-- コマンド: `0x51` enable / `0x52` 1byte read / `0x53` 1byte write / `0x5B` EEPROM 128B→`A2:0x80–0xFF` /
-  `0x5C` `A2:0x80–0xFF`→EEPROM 128B / `0x50` disable
-- status: `0x00` 成功 / `0xFF` エラー / `0xFE` I2C 下位失敗
-
-> mailbox コマンドは `0x76` から 5 バイトを **1 トランザクション**で送る必要があります
-> （`0x78` のページ境界を跨ぐため通常のページ分割書込は使えず、本タブは分割しない専用 WRITE を使用）。
+- **必須**: 専用ファーム `device-avago-isp`（FW v2.x）＋専用配線
+  - MOSI=pin4/GP4, SCK=pin5/GP5, MISO=pin9/GP9, /RESET=pin15/GP15, VCC=pin16/3V3, GND=pin1
+- HID コマンド: `0x10` ISP_BEGIN（RESET Low→Programming Enable, 応答=signature） /
+  `0x11` ISP_XFER（4バイト ISP 命令を全二重転送） / `0x12` ISP_END（RESET 解放→I2C 復帰）
+- タブの操作: ① ISP 接続/デバイス確認（signature・lock・fuse） / ② EEPROM 1KB バックアップ /
+  ③ ファーム(フラッシュ)32KB ダンプ（読み出しのみ） /
+  ④ A0 クローン書込（内部 EEPROM `0x300–0x37F`, 実SN維持・checksum再計算・verify）
+- 書込元像の選び方（プリセット / アップロード / 別バスコピー）は **クローン書込タブと同じ操作感**で、
+  ISP タブ内に独立して用意してあります。別バスコピーは I2C を使うので **ISP 開始前**に実行してください。
+- 内部 EEPROM レイアウト: `0x300–0x37F` = A0(0x50) ページ（実測確定）
+- **Chip Erase は使いません**（フラッシュ＝ファームを消さない）。書込前に必ず ② でバックアップを取得。
+  ホスト側 CLI 版は `tools/avr_isp.py`、設計詳細は `AVAGO_ISP_DESIGN.md` を参照。
 
 ## プリセットの定義（presets.json）
 
