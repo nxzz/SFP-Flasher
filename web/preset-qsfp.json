@@ -1,0 +1,13 @@
+{
+  "_comment": "QSFP 書き込み用プリセット EEPROM。file は preset-qsfp.json からの相対パス。ここに追記すればクローン書込タブ(QSFP)の選択肢が増えます。実 SN は書込時に自動で維持されます。SFP は preset-sfp.json を参照。",
+  "_form": "このファイルのエントリは UI の QSFP トグルで表示されます（form は読込時に自動で QSFP 付与）。QSFP+ は SFF-8636・256B・識別子 0x0D。",
+  "presets": [
+    {
+      "name": "KAIAM XQX2502 (QSFP+ KD61029289)",
+      "file": "bin/qsfp/qsfp-KD61029289.bin",
+      "vendor": "KAIAM CORP",
+      "pn": "XQX2502",
+      "note": "QSFP+ 40G SFF-8636 256B"
+    }
+  ]
+}

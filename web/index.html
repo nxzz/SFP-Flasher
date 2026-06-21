@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0028)https://sfp-flasher.web.app/ -->
+<html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0b1020">
-<title>SFP Flash Web — EEPROM ツール</title>
+<title>SFP / QSFP Flash Web — EEPROM ツール</title>
 <style>
   :root {
     color-scheme: light dark;
@@ -137,18 +137,18 @@
 <header>
   <div class="wrap">
     <div class="hbar">
-      <div class="brand"><span class="logo">SFP</span> SFP Flash Web</div>
+      <div class="brand"><span class="logo">S/Q</span> SFP / QSFP Flash Web</div>
       <span class="spacer"></span>
       <span id="status" class="pill idle">未接続</span>
       <span id="fw" class="badge" style="display:none"></span>
     </div>
     <div class="hbar" style="padding-top:0">
       <button id="connect">接続</button>
-      <button id="disconnect" class="secondary" disabled>切断</button>
+      <button id="disconnect" class="secondary" disabled="">切断</button>
     </div>
     <nav id="nav">
-      <button data-tab="dump" class="active">ダンプ / 解析</button>
-      <button data-tab="clone">クローン書込</button>
+      <button data-tab="dump" class="">ダンプ / 解析</button>
+      <button data-tab="clone" class="active">クローン書込</button>
       <button data-tab="dwdm">DWDM 波長</button>
       <button data-tab="avago">Avago ISP 書換</button>
     </nav>
@@ -163,17 +163,20 @@
   </div>
 
   <!-- ============ DUMP / ANALYZE ============ -->
-  <section class="card panel active" data-panel="dump">
+  <section class="card panel" data-panel="dump">
     <h2>📥 ダンプ / 解析</h2>
-    <p class="desc">接続中の SFP(0x50)から 128 バイトを読み出し、SFF-8472 として解析表示します。<code>.bin</code> で手元に保存できます。</p>
+    <p class="desc">接続中のモジュール(0x50)を読み出して解析表示します。<b>SFP</b> は SFF-8472(128B)、<b>QSFP/QSFP28</b> は SFF-8636(上位ページ 00h を含む 256B)として解析します。<code>.bin</code> で手元に保存できます。</p>
     <div class="row center">
-      <label class="field" style="flex-direction:row;align-items:center;gap:.5rem"><span>バス</span>
-        <select id="busDump"><option value="0">Bus 0 (IO12/13)</option><option value="1">Bus 1 (IO26/27)</option></select>
+      <label class="field" style="flex-direction:row;align-items:center;gap:.5rem"><span>モジュール</span>
+        <select id="typeDump">
+          <option value="sfp">SFP / SFP+ (Bus0 = IO12/13)</option>
+          <option value="qsfp">QSFP / QSFP28 (Bus1 = IO26/27)</option>
+        </select>
       </label>
     </div>
     <div class="row center">
-      <button id="dumpBtn" disabled>SFP をダンプ</button>
-      <button id="dumpSave" class="secondary" disabled>.bin 保存</button>
+      <button id="dumpBtn" disabled="">ダンプ実行</button>
+      <button id="dumpSave" class="secondary" disabled="">.bin 保存</button>
       <span id="dumpInfo" class="hint"></span>
     </div>
     <div id="dumpParsed"></div>
@@ -181,17 +184,19 @@
   </section>
 
   <!-- ============ CLONE ============ -->
-  <section class="card panel" data-panel="clone">
+  <section class="card panel active" data-panel="clone">
     <h2>🧬 クローン書込 <span class="badge">実 SN・製造日 維持</span></h2>
     <p class="desc">
-      選んだ EEPROM 像でモジュールを上書きしますが、<b>そのモジュール本来のシリアル番号(0x44–0x53)と製造日(0x54–0x5B)は維持</b>します。
-      チェックサムは自動再計算し、書込前にアンロック、書込後にベリファイします。
+      選んだ EEPROM 像でモジュールを上書きしますが、<b>そのモジュール本来のシリアル番号と製造日は維持</b>します。
     </p>
     <div class="note">⚠️ EEPROM を上書きします。先に「ダンプ / 解析」でバックアップを取得してください。</div>
 
     <div class="row center" style="margin-top:.8rem">
-      <label class="field" style="flex-direction:row;align-items:center;gap:.5rem"><span>書込先バス</span>
-        <select id="busClone"><option value="0">Bus 0 (IO12/13)</option><option value="1">Bus 1 (IO26/27)</option></select>
+      <label class="field" style="flex-direction:row;align-items:center;gap:.5rem"><span>書込先モジュール</span>
+        <select id="typeClone">
+          <option value="sfp">SFP / SFP+ (Bus0 = IO12/13)</option>
+          <option value="qsfp">QSFP / QSFP28 (Bus1 = IO26/27)</option>
+        </select>
       </label>
     </div>
 
@@ -199,19 +204,21 @@
       <legend>書き込む EEPROM 像</legend>
       <div class="row center">
         <div class="seg" id="srcSeg">
-          <label id="segPreset" class="on"><input type="radio" name="src" value="preset" checked> プリセット</label>
+          <label id="segPreset" class="on"><input type="radio" name="src" value="preset" checked=""> プリセット</label>
           <label id="segUpload"><input type="radio" name="src" value="upload"> アップロード</label>
-          <label id="segBus"><input type="radio" name="src" value="bus"> 別バスからコピー</label>
         </div>
       </div>
       <div class="row center" id="presetRow">
         <label class="field grow"><span>プリセット検索</span>
           <input id="presetSearch" type="search" placeholder="ベンダー / PN / 名称で絞り込み（スペース区切りでAND）" autocomplete="off">
         </label>
+        <label class="field"><span>種別</span>
+          <select id="presetForm"></select>
+        </label>
       </div>
       <div class="row center" id="presetRow2">
-        <label class="field grow"><span>プリセット(presets.json) <span id="presetCount" class="hint"></span></span>
-          <select id="presetSel" size="8"><option>読込中...</option></select>
+        <label class="field grow"><span>プリセット(preset-*.json) <span id="presetCount" class="hint"></span></span>
+          <select id="presetSel" size="8"><optgroup label="★ 厳選 (12)"><option value="0">Finisar FTLX8571D3BCL (10G SR)  — 10G 850nm SR</option><option value="1">Finisar 10G (fin-10G)  — 10G 850nm</option><option value="2">Allied Telesis Stack (FTLX8571 改)  — AT StackMod</option><option value="3">Brocade 57-0000075-01  — 10G 850nm</option><option value="4">Cisco 8G FC (Finisar)  — 8G FC 850nm</option><option value="5">Cisco GLC-SX-MMD  — 1G 850nm SX</option><option value="6">Cisco SFP-H10GB-CU3M (DAC)  — 10G DAC 3m</option><option value="7">Cisco SFP10G-MFCT-80-C  — 10G 80km</option><option value="8">FS SFP-10GSR-85  — 10G 850nm SR</option><option value="9">FiberJP 10GBX23-10 (1270tx/1330rx)  — 10G BiDi 1270↑</option><option value="10">AT 10GBX23-10 Stack 改  — BiDi StackMod</option><option value="11">FiberJP 10GBX32-10 (1330tx/1270rx)  — 10G BiDi 1330↑</option></optgroup><optgroup label="(ベンダー不明) (1)"><option value="12">(no vendor) SFP-LX-10  — 1G LX 1310nm 10km</option></optgroup><optgroup label="A-Gear (1)"><option value="13">A-Gear SFP1G1SM55-20SC revA  — 1GFC 1550nm 20km</option></optgroup><optgroup label="AGILENT (1)"><option value="14">AGILENT QBCU-5799R  — 1G T</option></optgroup><optgroup label="AIMBRIDGES (1)"><option value="15">AIMBRIDGES 078233-0070 rev0003  — 200M</option></optgroup><optgroup label="ALA (1)"><option value="16">ALA SPL43GBBXIDFMA1 revA0  — 1G LX 1550nm 3km</option></optgroup><optgroup label="Amphenol (3)"><option value="17">Amphenol 603830003 revH  — 10G DAC 3m</option><option value="18">Amphenol 603830003 revL  — 10G DAC 3m</option><option value="19">Amphenol 616740001 revC  — 10G DAC 1m</option></optgroup><optgroup label="Arista Networks (6)"><option value="20">Arista Networks CAB-SFP-SFP-3M rev0002  — 10G DAC 3m</option><option value="21">Arista Networks CAB-SFP-SFP-5M rev0002  — 10G DAC 5m</option><option value="22">Arista Networks SFP-10G-LR rev0002  — 10G LR 1310nm 10km</option><option value="23">Arista Networks SFP-10G-LR rev0002  — 10G LR 1310nm 10km</option><option value="24">Arista Networks SFP-10G-SR rev0002  — 10G SR 850nm 300m</option><option value="25">Arista Networks SK-DA-SP10-2M revA  — 10G DAC 2m</option></optgroup><optgroup label="AVAGO (11)"><option value="26">AVAGO ABCU-571NRZ-BB1  — 1G T</option><option value="27">AVAGO ABCU-5730ARZ  — 1G T</option><option value="28">AVAGO AFBR-2CAR20Z  — 10G AOC 20m</option><option value="29">AVAGO AFBR-5715ALZ  — 1G SX 850nm 550m</option><option value="30">AVAGO AFBR-5715PZ-BN1  — 1G SX 850nm 550m</option><option value="31">AVAGO AFBR-5715PZ-JU2  — 1G SX 850nm 550m</option><option value="32">AVAGO AFBR-57R6APZ-EMC  — 1G SX 850nm 150m</option><option value="33">AVAGO AFCT-5710PZ-3C1 rev0000  — 1G LX 1310nm 10km</option><option value="34">AVAGO AFCT-5715APZ-AL1 rev0000  — 1G LX 1310nm 10km</option><option value="35">AVAGO HBCU-5710R  — 1G T</option><option value="36">AVAGO HFBR-57E0ALZ  — 100M FX 1310nm 2000m</option></optgroup><optgroup label="Axcen Photonics (1)"><option value="37">Axcen Photonics AXGE-5854-0511 revV1.0  — 1G SX 850nm 550m</option></optgroup><optgroup label="Blade Network (7)"><option value="38">Blade Network BN-CKM-S-SX  — 1G SX 850nm 550m</option><option value="39">Blade Network BN-CKM-SP-LR revG2.3  — 10G LR 1270nm 20km</option><option value="40">Blade Network BN-CKM-SP-LR revG2.3  — 10G LR 1310nm 20km</option><option value="41">Blade Network BN-CKM-SP-SR revG2.3  — 10G SR 850nm 300m</option><option value="42">Blade Network GLC-LH-SM-SO  — 1G LX 1550nm 80km</option><option value="43">Blade Network GLC-T-SO  — 1G LX 1550nm 80km</option><option value="44">Blade Network SFP-10G-LR+-SO rev01  — 10G LR 1310nm 10km</option></optgroup><optgroup label="BROCADE (4)"><option value="45">BROCADE 57-1000012-01 revA  — 8GFC SW 850nm 150m</option><option value="46">BROCADE 57-1000012-01 revA  — 8GFC SW 850nm 150m</option><option value="47">BROCADE 58-1000027-01 revA  — 10G AOC 3m</option><option value="48">BROCADE FTRJ1319P1BCL revA  — 1G LX 1310nm 10km</option></optgroup><optgroup label="Cable Matters (1)"><option value="49">Cable Matters 104033-2m-US rev03  — 10G DAC 2m</option></optgroup><optgroup label="CISCO (1)"><option value="50">CISCO SFCT-5716PZ-CS1 rev002  — 1G LX 1310nm 10km</option></optgroup><optgroup label="CISCO-AGILENT (1)"><option value="51">CISCO-AGILENT QFBR-5766LP  — 1G SX 550m</option></optgroup><optgroup label="CISCO-AVAGO (3)"><option value="52">CISCO-AVAGO ABCU-5710RZ-CS4B rev2  — 1G T</option><option value="53">CISCO-AVAGO QFBR-5766LP  — 1G SX 850nm 550m</option><option value="54">CISCO-AVAGO SFCT-5798PZ-CS3 rev0000  — 1G LX 1310nm 10km</option></optgroup><optgroup label="CISCO-FINISAR (22)"><option value="55">CISCO-FINISAR 1000BASE-LX revA0  — 1G LX 10km</option><option value="56">CISCO-FINISAR 1000BASE-LX revA0  — 1G LX 10km</option><option value="57">CISCO-FINISAR FTLF1318P2BCL-C3 revA  — 1G LX 1310nm 10km</option><option value="58">CISCO-FINISAR FTLF1318P2BCL-CS rev0000  — 1G LX 1310nm 10km</option><option value="59">CISCO-FINISAR FTLX1471D3BCL-CS revA  — 10G LR 1310nm 10km</option><option value="60">CISCO-FINISAR FTLX1474D3BCL-CS revA  — 10G LR 1310nm 10km</option><option value="61">CISCO-FINISAR FTLX8570D3BCL-C2 revA  — 10G 850nm 100m</option><option value="62">CISCO-FINISAR FTLX8571D3BCL-C2 revA  — 10G SR 850nm 300m</option><option value="63">CISCO-FINISAR FTRJ-8519-7D-CSC  — 1G SX 550m</option><option value="64">CISCO-FINISAR FTRJ1319P1BTL-C6 revB  — 1G LX 1310nm 10km</option><option value="65">CISCO-FINISAR FTRJ1519P1BCL-CS revA  — 1G LX 1550nm 76km</option><option value="66">CISCO-FINISAR FTRJ8519P1BNL-C6 revA  — 1G SX 850nm 550m</option><option value="67">CISCO-FINISAR GLC-BX-D rev10.0  — 1G 1550nm 10km</option><option value="68">CISCO-FINISAR GLC-BX-U revA  — 1G 1310nm 10km</option><option value="69">CISCO-FINISAR GLC-GE-100FX revA1  — 100M FX 1310nm 2000m</option><option value="70">CISCO-FINISAR GLC-LH-SM revA0  — 1G LX 1310nm 10km</option><option value="71">CISCO-FINISAR GLC-LH-SM revA  — 1G LX 1310nm 10km</option><option value="72">CISCO-FINISAR GLC-T revA  — 1G T</option><option value="73">CISCO-FINISAR GLC-T rev11.0  — 1G T 255km</option><option value="74">CISCO-FINISAR GPB-3524S-L2CD rev11.0  — 1G 1310nm 20km</option><option value="75">CISCO-FINISAR GPB-5324S-L2CD rev11.0  — 1G 1550nm 20km</option><option value="76">CISCO-FINISAR SFP-SX-MM revA1  — 1G SX 850nm 550m</option></optgroup><optgroup label="CISCO-JDSU (1)"><option value="77">CISCO-JDSU PLRXPL-VC-S43-CG revB  — 10G 850nm 100m</option></optgroup><optgroup label="CISCO-LUMENTUM (1)"><option value="78">CISCO-LUMENTUM PLRXPL-SC-S43-CS rev3  — 10G SR 850nm 300m</option></optgroup><optgroup label="CISCO-METHODE (5)"><option value="79">CISCO-METHODE SP7041 revC  — 1G T</option><option value="80">CISCO-METHODE SP7041 revD  — 1G T</option><option value="81">CISCO-METHODE SP7041 revE  — 1G T</option><option value="82">CISCO-METHODE SP7041_E revB  — 1G T</option><option value="83">CISCO-METHODE SP7041-E revE  — 1G T</option></optgroup><optgroup label="CISCO-MOLEX (2)"><option value="84">CISCO-MOLEX 74752-9045 rev07  — 10G DAC 3m</option><option value="85">CISCO-MOLEX 74752-9047 rev07  — 10G DAC 5m</option></optgroup><optgroup label="CISCO-OCP (1)"><option value="86">CISCO-OCP TRPD12MM2EAS-CS revA  — 600M 1310nm 500m</option></optgroup><optgroup label="CISCO-PROLABS (1)"><option value="87">CISCO-PROLABS ZX-SFP-1550-C  — 1GFC LW 1550nm 80km</option></optgroup><optgroup label="CISCO-SUMITOMO (2)"><option value="88">CISCO-SUMITOMO SCP6894-C1-BNE revD  — 1G LX 1550nm 80km</option><option value="89">CISCO-SUMITOMO SCP6894-C1-BNE revD  — 1G LX 1550nm 80km</option></optgroup><optgroup label="CISCO-TYCO (1)"><option value="90">CISCO-TYCO 1-2053783-2 revP  — 10G DAC 3m</option></optgroup><optgroup label="D-Link (1)"><option value="91">D-Link DEM-330T rev0000  — 1G LX 1550nm 10km</option></optgroup><optgroup label="D-LINK (2)"><option value="92">D-LINK DEM-310GT rev0000  — 1G LX 1310nm 10km</option><option value="93">D-LINK DEM-311GT rev0000  — 1G SX 850nm 500m</option></optgroup><optgroup label="DELTA (2)"><option value="94">DELTA LCP-1250B4QDRT-E revA  — 1G LX 1310nm 10km</option><option value="95">DELTA LCP-1250RJ3S rev0000  — 1G T</option></optgroup><optgroup label="EDGE (2)"><option value="96">EDGE BIDI-1.25G-SFP-2  — 1G BX-D 1550nm 20km</option><option value="97">EDGE BIDI-1.25G-SFP-2  — 1G BX-U 1310nm 20km</option></optgroup><optgroup label="Emcore Corp. (1)"><option value="98">Emcore Corp. TXN221200000005  — 1G LX 1310nm 10km</option></optgroup><optgroup label="EtherWAN (1)"><option value="99">EtherWAN EX-1250TSP-MB2LA rev0000  — 1G SX 1310nm 2000m</option></optgroup><optgroup label="FANG HANG (2)"><option value="100">FANG HANG FH-DP1T30SS01 revR  — 10G DAC 1m</option><option value="101">FANG HANG FH-SB3512CDL20 revA0  — 1G 1310nm 20km</option></optgroup><optgroup label="FiberHome (2)"><option value="102">FiberHome 5044002-008-C rev00  — 10G LR 1270nm 20km</option><option value="103">FiberHome 5044002-009 rev00  — 10G LR 1330nm 20km</option></optgroup><optgroup label="FiberStore (1)"><option value="104">FiberStore SFP1G-LX-31 revA0  — 1G LX 1310nm 10km</option></optgroup><optgroup label="Fibertrade (1)"><option value="105">Fibertrade FT-SFP-Copper revA  — 1G T</option></optgroup><optgroup label="FiberTrade (1)"><option value="106">FiberTrade FT-SFP+-WDM-EZR- revA  — 10G 1550nm 80km</option></optgroup><optgroup label="FIBERXON INC. (5)"><option value="107">FIBERXON INC. 3401C-SL10BG-JNP rev10  — 1G SX 1310nm 20km</option><option value="108">FIBERXON INC. 5401C-SL10BG-JNP rev10  — 1G SX 1550nm 20km</option><option value="109">FIBERXON INC. FTM-3012C-SLG rev10  — 1G LX 1310nm 10km</option><option value="110">FIBERXON INC. FTM-3401C-SL2G rev10  — 1G BX-U 1310nm 2000m</option><option value="111">FIBERXON INC. FTM-811XC-L03DG rev10  — 10G SR 850nm 300m</option></optgroup><optgroup label="FIBO (2)"><option value="112">FIBO FT-S1-RJ45 revA0  — 1G T</option><option value="113">FIBO FT-S10-X3120LD revA  — 10G LR 1310nm 20km</option></optgroup><optgroup label="FINISAR CORP. (28)"><option value="114">FINISAR CORP. FCLF-8521-3-ER revA  — 1G T</option><option value="115">FINISAR CORP. FCLF-8521-3-HP revA  — 1G T</option><option value="116">FINISAR CORP. FCLF8520P2BTL-J1 revA  — 1G T</option><option value="117">FINISAR CORP. FCLF8521P2BTL-A5 revA  — 1G T</option><option value="118">FINISAR CORP. FCMJ-8521-3 rev4  — 1G T</option><option value="119">FINISAR CORP. FTLF1318P2BCL-PR revA  — 1G LX 1310nm 4km</option><option value="120">FINISAR CORP. FTLF1318P2BTL-J1 revA  — 1G LX 1310nm 10km</option><option value="121">FINISAR CORP. FTLF8519P2BCL-HP revA  — 1G SX 850nm 300m</option><option value="122">FINISAR CORP. FTLF8519P2BCL-PR revA  — 1G SX 850nm 300m</option><option value="123">FINISAR CORP. FTLF8524P2BNV-BR revA  — 1G SX 850nm 150m</option><option value="124">FINISAR CORP. FTLF8524P2BNV-EC revA  — 1G SX 850nm 150m</option><option value="125">FINISAR CORP. FTLF8524P2BNV-HP revA  — 1G SX 850nm 150m</option><option value="126">FINISAR CORP. FTLF8528P2BCV-IL revA  — 10G SR 850nm 300m</option><option value="127">FINISAR CORP. FTLX1471D3BCL-FC revA  — 10G LR 1310nm 10km</option><option value="128">FINISAR CORP. FTLX1471D3BCL-HP revA  — 10G LR 1310nm 10km</option><option value="129">FINISAR CORP. FTLX8571D3BCL-HD revA  — 10G SR 850nm 300m</option><option value="130">FINISAR CORP. FTLX8571D3BCL-HZ revA  — 10G SR 850nm 300m</option><option value="131">FINISAR CORP. FTLX8571D3BCLHW2 revA  — 10G SR 850nm 100m</option><option value="132">FINISAR CORP. FTLX8571D3BNL-E5 revB  — 10G SR 850nm 300m</option><option value="133">FINISAR CORP. FTRJ-1319-7D  — 1G LX 1310nm 10km</option><option value="134">FINISAR CORP. FTRJ-8519-7 revX1  — 1G SX 550m</option><option value="135">FINISAR CORP. FTRJ1319P1BNL-PT revA  — 1G LX 1310nm 10km</option><option value="136">FINISAR CORP. FTRJ1319P1BTL-PT revA  — 1G LX 1310nm 10km</option><option value="137">FINISAR CORP. FTRJ1322P1BTR-M1 revA  — 600M 1310nm 15km</option><option value="138">FINISAR CORP. FTRJ8519P1BNL-B1 revA  — 10G LR 850nm 32km</option><option value="139">FINISAR CORP. FTRJ8519P1BNL-PT revA  — 1G SX 850nm 300m</option><option value="140">FINISAR CORP. GP-3124-L2C revA  — 1G LX 1310nm 10km</option><option value="141">FINISAR CORP. SFP-BX20-D revA0  — 1G LX 1550nm 22km</option></optgroup><optgroup label="FORTINET (1)"><option value="142">FORTINET FTLX8574D3BCLFTN revA  — 10G SR 850nm 300m</option></optgroup><optgroup label="Foundry Networks (1)"><option value="143">Foundry Networks S.8512.02.D  — 1G SX 850nm 550m</option></optgroup><optgroup label="FOUNDRY NETWORKS (1)"><option value="144">FOUNDRY NETWORKS HFBR-57E0PZ-FD  — 100M FX 1310nm 2000m</option></optgroup><optgroup label="FS (5)"><option value="145">FS S28-PC02 rev01  — 25G DAC 2m</option><option value="146">FS SFP-10GSR-85  — 10G SR 850nm 300m</option><option value="147">FS SFP1G-LX-31 revA  — 1G LX 1310nm 10km</option><option value="148">FS SFP1G-LX-31 revA0  — 1G LX 1310nm 10km</option><option value="149">FS SFP1G-LX-31 revF  — 1G LX 1310nm 10km</option></optgroup><optgroup label="Gigalight (7)"><option value="150">Gigalight FBT-PB-3524S-03C rev11.0  — 1G 1310nm 3km</option><option value="151">Gigalight FBT-PB-5324S-03C rev11.0  — 1G 1550nm 3km</option><option value="152">Gigalight GBP-2733192-L2C revA  — 10G LR 1270nm 20km</option><option value="153">Gigalight GBP-3327192-L2C revA  — 10G LR 1330nm 20km</option><option value="154">Gigalight GPB-3524S-L2CD rev11.0  — 1G 1310nm 20km</option><option value="155">Gigalight GPB-5324S-L2CD rev11.0  — 1G 1550nm 20km</option><option value="156">Gigalight MT-DP-57192-L4CD rev1.1  — 10G ER 1531nm 40km</option></optgroup><optgroup label="HP (1)"><option value="157">HP J4858C revA  — 1G SX 850nm 550m</option></optgroup><optgroup label="HP-A BROCADE (1)"><option value="158">HP-A BROCADE AJ716A revA  — 8GFC SW 850nm 150m</option></optgroup><optgroup label="HP-F (1)"><option value="159">HP-F AJ718A revA  — 8GFC SW 850nm 150m</option></optgroup><optgroup label="HP-F BROCADE (4)"><option value="160">HP-F BROCADE AJ716A revA  — 8GFC SW 850nm 150m</option><option value="161">HP-F BROCADE AJ716A revA  — 10G LR 1270nm 20km</option><option value="162">HP-F BROCADE AJ716A revA  — 10G LR 1270nm 20km</option><option value="163">HP-F BROCADE AJ716A revA  — 8GFC SW 1550nm 150m</option></optgroup><optgroup label="HUAWEI (2)"><option value="164">HUAWEI HPSP2120  — 10G LR 1310nm 20km</option><option value="165">HUAWEI HPSP2120  — 10G LR 1310nm 20km</option></optgroup><optgroup label="IBM (1)"><option value="166">IBM SFP-BX20-U revA0  — 1G LX 1310nm 22km</option></optgroup><optgroup label="Intel Corp (5)"><option value="167">Intel Corp 821-24-031-02 revN  — 10G DAC 3m</option><option value="168">Intel Corp AFBR-703SDZ-IN2 revG2.3  — 10G SR 850nm 300m</option><option value="169">Intel Corp FTLX1471D3BCV-IT revA  — 10G LR 1310nm 10km</option><option value="170">Intel Corp FTLX8571D3BCV-I3 revA  — 10G SR 850nm 300m</option><option value="171">Intel Corp FTLX8571D3BCV-IT revA  — 10G SR 850nm 300m</option></optgroup><optgroup label="Intel Corp. (1)"><option value="172">Intel Corp. SFP+-SR revA  — 10G SR 850nm 300m</option></optgroup><optgroup label="JDS UNIPHASE (1)"><option value="173">JDS UNIPHASE JSPR21S002304  — 2GFC SW 550m</option></optgroup><optgroup label="JDSU (1)"><option value="174">JDSU PLRXPL-SC-S43C1 rev1  — 10G SR 850nm 300m</option></optgroup><optgroup label="Juno (1)"><option value="175">Juno J-SFP-T  — 1G T</option></optgroup><optgroup label="MergeOptics GmbH (2)"><option value="176">MergeOptics GmbH TRX10GDL0610CA02 revC3  — 10G LRM 1310nm 220m</option><option value="177">MergeOptics GmbH TRX10GVP2010CA01 revB02  — 10G SR 850nm 300m</option></optgroup><optgroup label="Methode Elec. (6)"><option value="178">Methode Elec. DM7041 revC  — 1G T</option><option value="179">Methode Elec. SGT00P10DR00103 revA  — 1G T</option><option value="180">Methode Elec. SP7041 revA  — 1G T</option><option value="181">Methode Elec. SP7041-ISS rev-  — 1G T</option><option value="182">Methode Elec. SP7041-M1-JN rev-  — 1G T</option><option value="183">Methode Elec. SP7041-SCI rev-  — 1G T</option></optgroup><optgroup label="MicroOptics (1)"><option value="184">MicroOptics MO-L-ST1 revA  — 1G T</option></optgroup><optgroup label="Mikrotik (3)"><option value="185">Mikrotik S-31DLC20D  — 1G LX 1310nm 20km</option><option value="186">Mikrotik S-85DLC05D rev1  — 1G SX 850nm 550m</option><option value="187">Mikrotik S-RJ01 rev1.0  — 1G T</option></optgroup><optgroup label="MikroTik (1)"><option value="188">MikroTik S+DA0001 revD  — 10G AOC 7m</option></optgroup><optgroup label="Modultech (13)"><option value="189">Modultech 10GB-SFP-CW49 rev1.0  — 10G LR 1490nm 80km</option><option value="190">Modultech MT-BP-23192-L2CD revA  — 10G LR 1270nm 20km</option><option value="191">Modultech MT-BP-32192-L2CD rev1.0  — 10G LR 1330nm 20km</option><option value="192">Modultech MT-E-GB-P1RC rev11.0  — 1G T</option><option value="193">Modultech MT-P-3124-L2C rev1.0  — 1G LX 1310nm 10km</option><option value="194">Modultech MT-P-8524-S5C rev1.0  — 1G SX 850nm 550m</option><option value="195">Modultech MT-P-8524-S5C revA0  — 1G LX 850nm 550m</option><option value="196">Modultech MT-PB-3524S-03C rev1.0  — 1GFC 1310nm 3km</option><option value="197">Modultech MT-PB-3524S-L2C rev1.0  — 1G 1310nm 10km</option><option value="198">Modultech MT-PB-5324S-03C rev1.0  — 1GFC 1550nm 3km</option><option value="199">Modultech MT-PP-85192-SR rev1.0  — 10G SR 850nm 300m</option><option value="200">Modultech SFP-BX-D55 rev1.0  — 1G 1550nm 40km</option><option value="201">Modultech SFP-BX-U31 rev1.0  — 1G 1310nm 40km</option></optgroup><optgroup label="Molex Inc. (2)"><option value="202">Molex Inc. 74752-9056 revC  — 10G</option><option value="203">Molex Inc. 74752-9506  — 12G DAC 3m</option></optgroup><optgroup label="MOXA (3)"><option value="204">MOXA SFP-1G10ALC rev0000  — 1G LX 1310nm 10km</option><option value="205">MOXA SFP-1GLSXLC rev0000  — 1G SX 1310nm 2000m</option><option value="206">MOXA SFP-1GLXLC rev0000  — 1G LX 1310nm 40km</option></optgroup><optgroup label="MRV COMM, INC. (1)"><option value="207">MRV COMM, INC. SFP-DGD-SX  — 1G SX 850nm 550m</option></optgroup><optgroup label="My D-link (1)"><option value="208">My D-link MYDEM-311GT rev0000  — 1G SX 850nm 500m</option></optgroup><optgroup label="NATEKS (1)"><option value="209">NATEKS FG-FO-L1.1 rev0000  — 100M LX 1310nm 40km</option></optgroup><optgroup label="NGoptics (1)"><option value="210">NGoptics NGSBS1G20D-53 revA  — 1GFC 1550nm 20km</option></optgroup><optgroup label="NGOPTICS (1)"><option value="211">NGOPTICS NGSBS1G20D-35 revA  — 1GFC 1310nm 20km</option></optgroup><optgroup label="OCP (1)"><option value="212">OCP TRPNG1ZXIBGS-TM rev0000  — 1G LX 1550nm 80km</option></optgroup><optgroup label="OEM (99)"><option value="213">OEM 10G SFP cable revN  — 10G DAC 1m</option><option value="214">OEM 10GB-SFP-U27-JN rev1.0  — 10G LR 1270nm 40km</option><option value="215">OEM 584990002 revA  — 10G DAC 3m</option><option value="216">OEM AM1B-SFP-GE-SM15  — 1G BX-D 1550nm 3km</option><option value="217">OEM APSPB23B33CDL40 rev0011  — 10G ER 1270nm 40km</option><option value="218">OEM BL-SFPGM850-05L revA0  — 1G SX 850nm 550m</option><option value="219">OEM CL-SFP-WDM-20-55 rev10.0  — 1G LX 1550nm 20km</option><option value="220">OEM CLSFPWDM3-55SCDD  — 1G LX 1550nm 3km</option><option value="221">OEM ESB3512-3SCD3 revA0  — 1G 1310nm 3km</option><option value="222">OEM FBT-3512-S0 revA0  — 1G LX 1310nm 3km</option><option value="223">OEM FH-SB541TCDL80 revA0  — 1G 1550nm 80km</option><option value="224">OEM GE-31A revA0  — 1G BX-U 1310nm 20km</option><option value="225">OEM GE-49A revA0  — 1G BX-D 1490nm 80km</option><option value="226">OEM GE-LX revA0  — 1G LX 1310nm 20km</option><option value="227">OEM GLC-BX-U revA  — 1GFC 1310nm 10km</option><option value="228">OEM GLC-FE-BX-D revA  — 100M FX 1550nm 20km</option><option value="229">OEM GLOTST08LC2-1310 revA  — 10G LR 1310nm 10km</option><option value="230">OEM GR-SP10-W2740L-D revA  — 10G ER 1270nm 40km</option><option value="231">OEM J4858C revA  — 1G SX 850nm 550m</option><option value="232">OEM J4859D-OEM revA  — 1G LX 1310nm 20km</option><option value="233">OEM JD094B revA0  — 10G LR 1310nm 10km</option><option value="234">OEM JD094B-40-1310 revA  — 10G LR 1310nm 40km</option><option value="235">OEM JD094B-40-1350 revA  — 10G LR 1350nm 40km</option><option value="236">OEM JD094B-40-1390 revA  — 10G LR 1390nm 40km</option><option value="237">OEM JD094B-40-1610  — 10G LR 1610nm 40km</option><option value="238">OEM ML-30R/D  — 1G BX-D 1550nm 20km</option><option value="239">OEM ML-30T/D revA  — 1GFC 1310nm 20km</option><option value="240">OEM ML-30T/D  — 1G BX-U 1310nm 20km</option><option value="241">OEM MT-E-GB-P1RC rev11.0  — 1G T</option><option value="242">OEM NV-BP-32192-L2CD revV04  — 10G LR 1330nm 20km</option><option value="243">OEM NV-E-GB-P3RC rev11.0  — 1G T</option><option value="244">OEM NV-PP-31192-LRC revV04  — 10G LR 1310nm 10km</option><option value="245">OEM OEM-PSG3 revA  — 1G T</option><option value="246">OEM OP-MCP849L1SD-70  — 10G ER 1490nm 70km</option><option value="247">OEM OTP-46303D-3  — 1G LX 1310nm 3km</option><option value="248">OEM OTP-46503D-3  — 1G LX 1550nm 3km</option><option value="249">OEM OTP4632D-3L  — 1G LX 1310nm 20km</option><option value="250">OEM S&gt;SFPP-MM-03-85- revA  — 10G SR 850nm 300m</option><option value="251">OEM SFP-1.25G-1310 revA0  — 1G LX 1310nm 20km</option><option value="252">OEM SFP-1.25G-1310  — 1G LX 1310nm 10km</option><option value="253">OEM SFP-1.25G-1310 revA0  — 1G LX 1310nm 10km</option><option value="254">OEM SFP-1.25G-1310D revA0  — 1G LX 1310nm 20km</option><option value="255">OEM SFP-1.25G-1310D revA0  — 1G LX 1310nm 10km</option><option value="256">OEM SFP-1.25G-1310D revA0  — 1G LX 1310nm 10km</option><option value="257">OEM SFP-10G-D80-T rev1.0  — 10G ER 80km</option><option value="258">OEM SFP-10G-ER revB  — 10G ER 1550nm 40km</option><option value="259">OEM SFP-10G-LR rev1.0  — 10G LR 1310nm 10km</option><option value="260">OEM SFP-10G-LR revB  — 10G LR 1310nm 10km</option><option value="261">OEM SFP-10G-SR-EO revA  — 10G SR 850nm 300m</option><option value="262">OEM SFP-10G23-60D revA  — 10G LR 1270nm 60km</option><option value="263">OEM SFP-1SM-1310-3SC revA0  — 1G LX 1310nm 20km</option><option value="264">OEM SFP-1SM-1310-3SC revA0  — 1G LX 1310nm 20km</option><option value="265">OEM SFP-1SM-1550-3SC revA0  — 1G LX 1550nm 3km</option><option value="266">OEM SFP-1SM-1550-3SC revA0  — 1G LX 1550nm 20km</option><option value="267">OEM SFP-2SM-20LC revA0  — 1G LX 1310nm 20km</option><option value="268">OEM SFP-BIDI-20KM rev1.0  — 1G 1310nm 20km</option><option value="269">OEM SFP-BX-D55 rev1.0  — 1G LX 1310nm 3km</option><option value="270">OEM SFP-BX-D55 revA  — 1G LX 1550nm 40km</option><option value="271">OEM SFP-BX-D55 rev1.0  — 1G 1550nm 20km</option><option value="272">OEM SFP-BX-D55 revA  — 1G LX 1270nm 20km</option><option value="273">OEM SFP-BX-D55-JN rev1.0  — 1G BX-D 1550nm 20km</option><option value="274">OEM SFP-BX-U31 rev1.0  — 1G 1310nm 20km</option><option value="275">OEM SFP-BX-U31-JN rev1.0  — 1G BX-U 1310nm 20km</option><option value="276">OEM SFP-CWDM-1610 revA  — 1G 1610nm 80km</option><option value="277">OEM SFP-FE-100BX-U rev1.0  — 100M 1310nm 20km</option><option value="278">OEM SFP-G-T rev1.0  — 1G T</option><option value="279">OEM SFP-GE-T  — 1G T</option><option value="280">OEM SFP-H10GB-CU1M  — 10G DAC 1m</option><option value="281">OEM SFP-H10GB-CU1M revR  — 10G DAC 1m</option><option value="282">OEM SFP-LX revA0  — 1G LX 1310nm 10km</option><option value="283">OEM SFP-LX-10 revV1.0  — 1G LX 1310nm 10km</option><option value="284">OEM SFP-LX-SM revA0  — 1G LX 1310nm 10km</option><option value="285">OEM SFP-RJ45/10~1000 rev1.00  — 1G T</option><option value="286">OEM SFP-S-5335LC20D  — 1G LX 1550nm 20km</option><option value="287">OEM SFP-T rev10.0  — 1G T</option><option value="288">OEM SFP-T rev10.0  — 1G T</option><option value="289">OEM SFP-WDM1.25G-31 revA0  — 1G 1310nm 20km</option><option value="290">OEM SFP-WDM1.25G-31 rev1.0  — 1G LX 1310nm 3km</option><option value="291">OEM SFP-WDM1.25G-55 rev1.0  — 1G LX 1550nm 3km</option><option value="292">OEM SFP-WDM1.25G-55 revA0  — 1G 1550nm 10km</option><option value="293">OEM SFP-WDM155M-31 revA  — 100M 1310nm 20km</option><option value="294">OEM SFP-WDM155M-55 revA  — 100M 1550nm 20km</option><option value="295">OEM SFP+ BIDI-20 revA  — 10G LR 1270nm 20km</option><option value="296">OEM SFP+ BIDI-20 revA  — 10G LR 1270nm 20km</option><option value="297">OEM SFP+ BIDI-20 revA  — 10G LR 1330nm 20km</option><option value="298">OEM SFP+ LR revA  — 10G LR 1310nm 20km</option><option value="299">OEM SFP+-10G-SRDP revA  — 10G SR 850nm 300m</option><option value="300">OEM SFP+-1696-2357 revA  — 10G ER 1550nm 40km</option><option value="301">OEM SFP+DA3 rev1.0  — 10G DAC 1m</option><option value="302">OEM SFP10-LR revA  — 10G LR 1310nm 10km</option><option value="303">OEM SFP100-T rev1.0  — 100M LX</option><option value="304">OEM SP7041-E revE  — 1G T</option><option value="305">OEM SPT-PB351G-L20 revA0  — 1G LX 1310nm 20km</option><option value="306">OEM SPT-PC51TG-70D rev0001  — 10G 1510nm 70km</option><option value="307">OEM STICK  — 1G LX 1310nm 20km</option><option value="308">OEM WDM-1.25G-13-S03 revA0  — 1G LX 1310nm 3km</option><option value="309">OEM XFP-10G-BX10-U revB  — 10G LR 1270nm 20km</option><option value="310">OEM YXF-GE-B35S-20D  — 1GFC 1310nm 20km</option><option value="311">OEM YXF-GE-B53S-20D  — 1GFC 1550nm 20km</option></optgroup><optgroup label="OPL (1)"><option value="312">OPL SFP-W35-03-SC revA0  — 1G 1310nm 3km</option></optgroup><optgroup label="Optcore (1)"><option value="313">Optcore OPB1250-3520DCR revA0  — 1G 1310nm 20km</option></optgroup><optgroup label="OPTCORE (1)"><option value="314">OPTCORE SFPP-T rev1  — 10G SR 850nm 300m</option></optgroup><optgroup label="OPTEC-EXTREME (1)"><option value="315">OPTEC-EXTREME P.1396.10  — 10G LR 1310nm 10km</option></optgroup><optgroup label="OptiCin (5)"><option value="316">OptiCin SFP-BiDi.DDM3.03 rev1.0  — 1G LX 1310nm 3km</option><option value="317">OptiCin SFP-BiDi.DDM5.03 rev1.0  — 1G LX 1550nm 3km</option><option value="318">OptiCin SFP-CWDM47.120  — 1G LX 1470nm 120km</option><option value="319">OptiCin SFP-FX-B3-SGMII rev1.0  — 100M FX 1310nm 10km</option><option value="320">OptiCin SFP-WDM5.03  — 1G LX 1550nm 3km</option></optgroup><optgroup label="optronic (1)"><option value="321">optronic TRMF132155LC3c revA  — 100M LX 1310nm 2000m</option></optgroup><optgroup label="OptTech (1)"><option value="322">OptTech OTSFP-100-FX revA  — 100M LX 1310nm 2000m</option></optgroup><optgroup label="OSNOVO (1)"><option value="323">OSNOVO SFPS2LC15G-1310 rev02  — 1G LX 1310nm 20km</option></optgroup><optgroup label="QTECH (2)"><option value="324">QTECH QSC-SFP10GE-1310 rev1.0  — 1G LX 1310nm 10km</option><option value="325">QTECH QSC-SFP20GEW revT1  — 100M FX 1310nm 20km</option></optgroup><optgroup label="RCI (1)"><option value="326">RCI SFP-CWDM-160-61 rev10  — 1G LX 1610nm 160km</option></optgroup><optgroup label="SKEO (4)"><option value="327">SKEO SK-SFP-W1-31-3S- rev1.0  — 1GFC 1310nm 3km</option><option value="328">SKEO SKSFP-W01-3120SD revA  — 100M 1310nm 20km</option><option value="329">SKEO SKSFPX1-31-20L-D revA  — 1G LX 1310nm 20km</option><option value="330">SKEO SKSP10W103320LD revB  — 10G LR 1330nm 20km</option></optgroup><optgroup label="SNR (2)"><option value="331">SNR SFP+C51-70 rev1.0  — 10G 1510nm 70km</option><option value="332">SNR SNR-SFP-CWDM1310 revA  — 1G 1550nm 80km</option></optgroup><optgroup label="SOURCEPHOTONICS (3)"><option value="333">SOURCEPHOTONICS FTM-9612C-SL10G rev10  — 1G BX-U 1310nm 10km</option><option value="334">SOURCEPHOTONICS SPFEFXIDFM rev10  — 100M FX 1310nm 2000m</option><option value="335">SOURCEPHOTONICS SPP10E-LRCDFF-AY rev10  — 10G LR 1310nm 10km</option></optgroup><optgroup label="SumitomoElectric (7)"><option value="336">SumitomoElectric SBP6H44-AM-BN-49 revA  — 1G BX-D 1490nm 10km</option><option value="337">SumitomoElectric SBP6H54-L4-BN-31 revN  — 1G 1310nm 15km</option><option value="338">SumitomoElectric SBP6H54-L4-BN-49 revN  — 1G 1490nm 15km</option><option value="339">SumitomoElectric SCP6878-L5-XVE revE  — 2.5G 1550nm 80km</option><option value="340">SumitomoElectric SCP6F01-L4-CWE revH  — 200M 1310nm 15km</option><option value="341">SumitomoElectric SCP6G02-N8-AUE revN  — 600M 1310nm 15km</option><option value="342">SumitomoElectric SCP6G08-N8-AUE revA  — 2.5G 1310nm 15km</option></optgroup><optgroup label="SUPERXON LTD. (1)"><option value="343">SUPERXON LTD. SOGQ4321-PSGB rev10  — 2.5G 1490nm 20km</option></optgroup><optgroup label="TRIOTRONIK (1)"><option value="344">TRIOTRONIK LSFP-SX-UNI revA  — 1G SX 850nm 550m</option></optgroup><optgroup label="Tyco Electronics (1)"><option value="345">Tyco Electronics 2074977-2 revE  — 10G DAC 3m</option></optgroup><optgroup label="USource (1)"><option value="346">USource USFP-LOR53 rev1.0  — 1GFC 1550nm 3km</option></optgroup><optgroup label="VIMCOM (1)"><option value="347">VIMCOM SFP-LX.LC.20 revA0  — 1G LX 1310nm 20km</option></optgroup></select>
         </label>
       </div>
       <div class="row center" id="uploadRow" style="display:none">
@@ -219,20 +226,13 @@
           <input id="cloneFile" type="file" accept=".bin,application/octet-stream">
         </label>
       </div>
-      <div class="row center" id="busRow" style="display:none">
-        <label class="field"><span>コピー元バス</span>
-          <select id="copySrcBus"><option value="0">Bus 0 (IO12/13)</option><option value="1">Bus 1 (IO26/27)</option></select>
-        </label>
-        <button id="copyReadBtn" class="secondary" disabled>コピー元を読込</button>
-        <span class="hint">コピー元バスの 0x50 を読み、書込元にします（書込先は上部の「バス」）。</span>
-      </div>
       <div id="srcPreview" class="hint"></div>
     </fieldset>
 
     <hr class="sep">
     <h3 class="sub">単発書込</h3>
     <div class="row center">
-      <button id="cloneBtn" disabled>このモジュールへ書込(実SN維持)</button>
+      <button id="cloneBtn" disabled="">このモジュールへ書込(実SN維持)</button>
       <span id="cloneInfo" class="hint"></span>
     </div>
     <pre id="cloneOut" class="out">—</pre>
@@ -241,8 +241,8 @@
     <h3 class="sub">🔁 自動連続書込</h3>
     <p class="hint">挿入を待機 → 実SN維持で書込 → 抜去を待機、を繰り返します。モジュールを差し替えるだけで連続クローンできます。</p>
     <div class="row center">
-      <button id="loopStart" disabled>自動連続を開始</button>
-      <button id="loopStop" class="danger" disabled>停止</button>
+      <button id="loopStart" disabled="">自動連続を開始</button>
+      <button id="loopStop" class="danger" disabled="">停止</button>
       <span id="loopState" class="pill idle">停止中</span>
     </div>
     <pre id="loopOut" class="out">—</pre>
@@ -251,19 +251,19 @@
   <!-- ============ DWDM ============ -->
   <section class="card panel" data-panel="dwdm">
     <h2>📡 DWDM 波長設定 <span class="badge">tunable</span></h2>
-    <p class="desc">チューナブル SFP の ITU グリッドチャンネルを設定します。0x51 のページを 2 に切替え、freq×20 を レジスタ 146/147 に書き込みます。</p>
+    <p class="desc">チューナブル SFP の ITU グリッドチャンネルを設定します。0x51 のページを 2 に切替え、freq×20 を レジスタ 146/147 に書き込みます。<b>SFP(Bus0) 専用</b>機能です（QSFP には 0x51 が無いため非対応）。</p>
     <div class="row center">
-      <label class="field" style="flex-direction:row;align-items:center;gap:.5rem"><span>バス</span>
-        <select id="busDwdm"><option value="0">Bus 0 (IO12/13)</option><option value="1">Bus 1 (IO26/27)</option></select>
+      <label class="field" style="flex-direction:row;align-items:center;gap:.5rem"><span>モジュール</span>
+        <select id="typeDwdm"><option value="sfp">SFP / SFP+ (Bus0 = IO12/13)</option></select>
       </label>
     </div>
     <div class="row center">
-      <label class="field"><span>ITU チャンネル</span><select id="dwdmCh"></select></label>
-      <label class="field"><span>周波数 / 設定値</span><input id="dwdmFreq" type="text" readonly size="22"></label>
+      <label class="field"><span>ITU チャンネル</span><select id="dwdmCh"><option value="1">CH 1  (1577.03 nm)</option><option value="2">CH 2  (1576.2 nm)</option><option value="3">CH 3  (1575.37 nm)</option><option value="4">CH 4  (1574.54 nm)</option><option value="5">CH 5  (1573.71 nm)</option><option value="6">CH 6  (1572.89 nm)</option><option value="7">CH 7  (1572.06 nm)</option><option value="8">CH 8  (1571.24 nm)</option><option value="9">CH 9  (1570.42 nm)</option><option value="10">CH 10  (1569.59 nm)</option><option value="11">CH 11  (1568.77 nm)</option><option value="12">CH 12  (1567.95 nm)</option><option value="13">CH 13  (1567.13 nm)</option><option value="14">CH 14  (1566.31 nm)</option><option value="15">CH 15  (1565.5 nm)</option><option value="16">CH 16  (1564.68 nm)</option><option value="17">CH 17  (1563.86 nm)</option><option value="18">CH 18  (1563.05 nm)</option><option value="19">CH 19  (1562.23 nm)</option><option value="20">CH 20  (1561.42 nm)</option><option value="21">CH 21  (1560.61 nm)</option><option value="22">CH 22  (1559.79 nm)</option><option value="23">CH 23  (1558.98 nm)</option><option value="24">CH 24  (1558.17 nm)</option><option value="25">CH 25  (1557.36 nm)</option><option value="26">CH 26  (1556.55 nm)</option><option value="27">CH 27  (1555.75 nm)</option><option value="28">CH 28  (1554.94 nm)</option><option value="29">CH 29  (1554.13 nm)</option><option value="30">CH 30  (1553.33 nm)</option><option value="31">CH 31  (1552.52 nm)</option><option value="32">CH 32  (1551.72 nm)</option><option value="33">CH 33  (1550.92 nm)</option><option value="34">CH 34  (1550.12 nm)</option><option value="35">CH 35  (1549.32 nm)</option><option value="36">CH 36  (1548.51 nm)</option><option value="37">CH 37  (1547.72 nm)</option><option value="38">CH 38  (1546.92 nm)</option><option value="39">CH 39  (1546.12 nm)</option><option value="40">CH 40  (1545.32 nm)</option><option value="41">CH 41  (1544.53 nm)</option><option value="42">CH 42  (1543.73 nm)</option><option value="43">CH 43  (1542.94 nm)</option><option value="44">CH 44  (1542.14 nm)</option><option value="45">CH 45  (1541.35 nm)</option><option value="46">CH 46  (1540.56 nm)</option><option value="47">CH 47  (1539.77 nm)</option><option value="48">CH 48  (1538.98 nm)</option><option value="49">CH 49  (1538.19 nm)</option><option value="50">CH 50  (1537.4 nm)</option><option value="51">CH 51  (1536.61 nm)</option><option value="52">CH 52  (1535.82 nm)</option><option value="53">CH 53  (1535.04 nm)</option><option value="54">CH 54  (1534.25 nm)</option><option value="55">CH 55  (1533.47 nm)</option><option value="56">CH 56  (1532.68 nm)</option><option value="57">CH 57  (1531.9 nm)</option><option value="58">CH 58  (1531.12 nm)</option><option value="59">CH 59  (1530.33 nm)</option><option value="60">CH 60  (1529.55 nm)</option><option value="61">CH 61  (1528.77 nm)</option><option value="62">CH 62  (1527.99 nm)</option><option value="63">CH 63  (1527.22 nm)</option><option value="64">CH 64  (1526.44 nm)</option><option value="65">CH 65  (1525.66 nm)</option><option value="66">CH 66  (1524.89 nm)</option><option value="67">CH 67  (1524.11 nm)</option><option value="68">CH 68  (1523.34 nm)</option><option value="69">CH 69  (1522.56 nm)</option><option value="70">CH 70  (1521.79 nm)</option><option value="71">CH 71  (1521.02 nm)</option><option value="72">CH 72  (1520.25 nm)</option><option value="73">CH 73  (1519.48 nm)</option><option value="74">CH 74  (1518.71 nm)</option><option value="75">CH 75  (1517.94 nm)</option><option value="76">CH 76  (1517.17 nm)</option><option value="77">CH 77  (1516.4 nm)</option><option value="78">CH 78  (1515.63 nm)</option><option value="79">CH 79  (1514.87 nm)</option><option value="1.5">CH 1.5  (1576.61 nm)</option><option value="2.5">CH 2.5  (1575.78 nm)</option><option value="3.5">CH 3.5  (1574.95 nm)</option><option value="4.5">CH 4.5  (1574.13 nm)</option><option value="5.5">CH 5.5  (1573.3 nm)</option><option value="6.5">CH 6.5  (1572.48 nm)</option><option value="7.5">CH 7.5  (1571.65 nm)</option><option value="8.5">CH 8.5  (1570.83 nm)</option><option value="9.5">CH 9.5  (1570.01 nm)</option><option value="10.5">CH 10.5  (1569.18 nm)</option><option value="11.5">CH 11.5  (1568.36 nm)</option><option value="12.5">CH 12.5  (1567.54 nm)</option><option value="13.5">CH 13.5  (1566.72 nm)</option><option value="14.5">CH 14.5  (1565.9 nm)</option><option value="15.5">CH 15.5  (1565.09 nm)</option><option value="16.5">CH 16.5  (1564.27 nm)</option><option value="17.5">CH 17.5  (1563.45 nm)</option><option value="18.5">CH 18.5  (1562.64 nm)</option><option value="19.5">CH 19.5  (1561.83 nm)</option><option value="20.5">CH 20.5  (1561.01 nm)</option><option value="21.5">CH 21.5  (1560.2 nm)</option><option value="22.5">CH 22.5  (1559.39 nm)</option><option value="23.5">CH 23.5  (1558.58 nm)</option><option value="24.5">CH 24.5  (1557.77 nm)</option><option value="25.5">CH 25.5  (1556.96 nm)</option><option value="26.5">CH 26.5  (1556.15 nm)</option><option value="27.5">CH 27.5  (1555.34 nm)</option><option value="28.5">CH 28.5  (1554.54 nm)</option><option value="29.5">CH 29.5  (1553.73 nm)</option><option value="30.5">CH 30.5  (1552.93 nm)</option><option value="31.5">CH 31.5  (1552.12 nm)</option><option value="32.5">CH 32.5  (1551.32 nm)</option><option value="33.5">CH 33.5  (1550.52 nm)</option><option value="34.5">CH 34.5  (1549.72 nm)</option><option value="35.5">CH 35.5  (1548.91 nm)</option><option value="36.5">CH 36.5  (1548.11 nm)</option><option value="37.5">CH 37.5  (1547.32 nm)</option><option value="38.5">CH 38.5  (1546.52 nm)</option><option value="39.5">CH 39.5  (1545.72 nm)</option><option value="40.5">CH 40.5  (1544.92 nm)</option><option value="41.5">CH 41.5  (1544.13 nm)</option><option value="42.5">CH 42.5  (1543.33 nm)</option><option value="43.5">CH 43.5  (1542.54 nm)</option><option value="44.5">CH 44.5  (1541.75 nm)</option><option value="45.5">CH 45.5  (1540.95 nm)</option><option value="46.5">CH 46.5  (1540.16 nm)</option><option value="47.5">CH 47.5  (1539.37 nm)</option><option value="48.5">CH 48.5  (1538.58 nm)</option><option value="49.5">CH 49.5  (1537.79 nm)</option><option value="50.5">CH 50.5  (1537 nm)</option><option value="51.5">CH 51.5  (1536.22 nm)</option><option value="52.5">CH 52.5  (1535.43 nm)</option><option value="53.5">CH 53.5  (1534.64 nm)</option><option value="54.5">CH 54.5  (1533.86 nm)</option><option value="55.5">CH 55.5  (1533.07 nm)</option><option value="56.5">CH 56.5  (1532.29 nm)</option><option value="57.5">CH 57.5  (1531.51 nm)</option><option value="58.5">CH 58.5  (1530.72 nm)</option><option value="59.5">CH 59.5  (1529.94 nm)</option><option value="60.5">CH 60.5  (1529.16 nm)</option><option value="61.5">CH 61.5  (1528.38 nm)</option><option value="62.5">CH 62.5  (1527.6 nm)</option><option value="63.5">CH 63.5  (1526.83 nm)</option><option value="64.5">CH 64.5  (1526.05 nm)</option><option value="65.5">CH 65.5  (1525.27 nm)</option><option value="66.5">CH 66.5  (1524.5 nm)</option><option value="67.5">CH 67.5  (1523.72 nm)</option><option value="68.5">CH 68.5  (1522.95 nm)</option><option value="69.5">CH 69.5  (1522.18 nm)</option><option value="70.5">CH 70.5  (1521.4 nm)</option><option value="71.5">CH 71.5  (1520.63 nm)</option><option value="72.5">CH 72.5  (1519.86 nm)</option><option value="73.5">CH 73.5  (1519.09 nm)</option><option value="74.5">CH 74.5  (1518.32 nm)</option><option value="75.5">CH 75.5  (1517.55 nm)</option><option value="76.5">CH 76.5  (1516.78 nm)</option><option value="77.5">CH 77.5  (1516.02 nm)</option><option value="78.5">CH 78.5  (1515.25 nm)</option><option value="79.5">CH 79.5  (1514.49 nm)</option></select></label>
+      <label class="field"><span>周波数 / 設定値</span><input id="dwdmFreq" type="text" readonly="" size="22"></label>
     </div>
     <div class="row center">
-      <button id="dwdmReadBtn" class="secondary" disabled>現在の波長を読込</button>
-      <button id="dwdmBtn" disabled>波長を書き込む</button>
+      <button id="dwdmReadBtn" class="secondary" disabled="">現在の波長を読込</button>
+      <button id="dwdmBtn" disabled="">波長を書き込む</button>
       <span id="dwdmInfo" class="hint"></span>
     </div>
     <pre id="dwdmOut" class="out">—</pre>
@@ -288,8 +288,8 @@
     <h3 class="sub">① ISP 接続 / デバイス確認</h3>
     <p class="hint">/RESET を Low にして Programming Enable を送り、signature・lock・fuse を読み出します。終了時は必ず「ISP 終了」で RESET を解放してください。</p>
     <div class="row center">
-      <button id="ispBegin" disabled>ISP 開始 (Programming Enable)</button>
-      <button id="ispEnd" class="secondary" disabled>ISP 終了 (RESET 解放)</button>
+      <button id="ispBegin" disabled="">ISP 開始 (Programming Enable)</button>
+      <button id="ispEnd" class="secondary" disabled="">ISP 終了 (RESET 解放)</button>
       <span id="ispInfo" class="hint"></span>
     </div>
     <pre id="ispDevOut" class="out">—</pre>
@@ -298,7 +298,7 @@
     <h3 class="sub">② EEPROM バックアップ (1KB 全吸出し)</h3>
     <p class="hint">内部 EEPROM 1024 バイトを丸ごと吸い出して <code>.bin</code> 保存します。<b>書込前に必ず取得してください。</b></p>
     <div class="row center">
-      <button id="ispBackup" disabled>1KB 吸出し → .bin 保存</button>
+      <button id="ispBackup" disabled="">1KB 吸出し → .bin 保存</button>
       <span id="ispBackupInfo" class="hint"></span>
     </div>
 
@@ -306,7 +306,7 @@
     <h3 class="sub">③ ファーム(フラッシュ)ダンプ (32KB)</h3>
     <p class="hint">内蔵 ATmega328 のフラッシュ 32768 バイト（ファーム本体）を ISP で吸い出して <code>.bin</code> 保存します。読み出しのみ・無改変です。</p>
     <div class="row center">
-      <button id="ispFlash" disabled>32KB 吸出し → .bin 保存</button>
+      <button id="ispFlash" disabled="">32KB 吸出し → .bin 保存</button>
       <span id="ispFlashInfo" class="hint"></span>
     </div>
 
@@ -322,19 +322,21 @@
       <legend>書き込む EEPROM 像</legend>
       <div class="row center">
         <div class="seg" id="ispSrcSeg">
-          <label id="ispSegPreset" class="on"><input type="radio" name="ispsrc" value="preset" checked> プリセット</label>
+          <label id="ispSegPreset" class="on"><input type="radio" name="ispsrc" value="preset" checked=""> プリセット</label>
           <label id="ispSegUpload"><input type="radio" name="ispsrc" value="upload"> アップロード</label>
-          <label id="ispSegBus"><input type="radio" name="ispsrc" value="bus"> 別バスからコピー</label>
         </div>
       </div>
       <div class="row center" id="ispPresetRow">
         <label class="field grow"><span>プリセット検索</span>
           <input id="ispPresetSearch" type="search" placeholder="ベンダー / PN / 名称で絞り込み（スペース区切りでAND）" autocomplete="off">
         </label>
+        <label class="field"><span>種別</span>
+          <select id="ispPresetForm"></select>
+        </label>
       </div>
       <div class="row center" id="ispPresetRow2">
-        <label class="field grow"><span>プリセット(presets.json) <span id="ispPresetCount" class="hint"></span></span>
-          <select id="ispPresetSel" size="8"><option>読込中...</option></select>
+        <label class="field grow"><span>プリセット(preset-*.json) <span id="ispPresetCount" class="hint"></span></span>
+          <select id="ispPresetSel" size="8"><optgroup label="★ 厳選 (12)"><option value="0">Finisar FTLX8571D3BCL (10G SR)  — 10G 850nm SR</option><option value="1">Finisar 10G (fin-10G)  — 10G 850nm</option><option value="2">Allied Telesis Stack (FTLX8571 改)  — AT StackMod</option><option value="3">Brocade 57-0000075-01  — 10G 850nm</option><option value="4">Cisco 8G FC (Finisar)  — 8G FC 850nm</option><option value="5">Cisco GLC-SX-MMD  — 1G 850nm SX</option><option value="6">Cisco SFP-H10GB-CU3M (DAC)  — 10G DAC 3m</option><option value="7">Cisco SFP10G-MFCT-80-C  — 10G 80km</option><option value="8">FS SFP-10GSR-85  — 10G 850nm SR</option><option value="9">FiberJP 10GBX23-10 (1270tx/1330rx)  — 10G BiDi 1270↑</option><option value="10">AT 10GBX23-10 Stack 改  — BiDi StackMod</option><option value="11">FiberJP 10GBX32-10 (1330tx/1270rx)  — 10G BiDi 1330↑</option></optgroup><optgroup label="(ベンダー不明) (1)"><option value="12">(no vendor) SFP-LX-10  — 1G LX 1310nm 10km</option></optgroup><optgroup label="A-Gear (1)"><option value="13">A-Gear SFP1G1SM55-20SC revA  — 1GFC 1550nm 20km</option></optgroup><optgroup label="AGILENT (1)"><option value="14">AGILENT QBCU-5799R  — 1G T</option></optgroup><optgroup label="AIMBRIDGES (1)"><option value="15">AIMBRIDGES 078233-0070 rev0003  — 200M</option></optgroup><optgroup label="ALA (1)"><option value="16">ALA SPL43GBBXIDFMA1 revA0  — 1G LX 1550nm 3km</option></optgroup><optgroup label="Amphenol (3)"><option value="17">Amphenol 603830003 revH  — 10G DAC 3m</option><option value="18">Amphenol 603830003 revL  — 10G DAC 3m</option><option value="19">Amphenol 616740001 revC  — 10G DAC 1m</option></optgroup><optgroup label="Arista Networks (6)"><option value="20">Arista Networks CAB-SFP-SFP-3M rev0002  — 10G DAC 3m</option><option value="21">Arista Networks CAB-SFP-SFP-5M rev0002  — 10G DAC 5m</option><option value="22">Arista Networks SFP-10G-LR rev0002  — 10G LR 1310nm 10km</option><option value="23">Arista Networks SFP-10G-LR rev0002  — 10G LR 1310nm 10km</option><option value="24">Arista Networks SFP-10G-SR rev0002  — 10G SR 850nm 300m</option><option value="25">Arista Networks SK-DA-SP10-2M revA  — 10G DAC 2m</option></optgroup><optgroup label="AVAGO (11)"><option value="26">AVAGO ABCU-571NRZ-BB1  — 1G T</option><option value="27">AVAGO ABCU-5730ARZ  — 1G T</option><option value="28">AVAGO AFBR-2CAR20Z  — 10G AOC 20m</option><option value="29">AVAGO AFBR-5715ALZ  — 1G SX 850nm 550m</option><option value="30">AVAGO AFBR-5715PZ-BN1  — 1G SX 850nm 550m</option><option value="31">AVAGO AFBR-5715PZ-JU2  — 1G SX 850nm 550m</option><option value="32">AVAGO AFBR-57R6APZ-EMC  — 1G SX 850nm 150m</option><option value="33">AVAGO AFCT-5710PZ-3C1 rev0000  — 1G LX 1310nm 10km</option><option value="34">AVAGO AFCT-5715APZ-AL1 rev0000  — 1G LX 1310nm 10km</option><option value="35">AVAGO HBCU-5710R  — 1G T</option><option value="36">AVAGO HFBR-57E0ALZ  — 100M FX 1310nm 2000m</option></optgroup><optgroup label="Axcen Photonics (1)"><option value="37">Axcen Photonics AXGE-5854-0511 revV1.0  — 1G SX 850nm 550m</option></optgroup><optgroup label="Blade Network (7)"><option value="38">Blade Network BN-CKM-S-SX  — 1G SX 850nm 550m</option><option value="39">Blade Network BN-CKM-SP-LR revG2.3  — 10G LR 1270nm 20km</option><option value="40">Blade Network BN-CKM-SP-LR revG2.3  — 10G LR 1310nm 20km</option><option value="41">Blade Network BN-CKM-SP-SR revG2.3  — 10G SR 850nm 300m</option><option value="42">Blade Network GLC-LH-SM-SO  — 1G LX 1550nm 80km</option><option value="43">Blade Network GLC-T-SO  — 1G LX 1550nm 80km</option><option value="44">Blade Network SFP-10G-LR+-SO rev01  — 10G LR 1310nm 10km</option></optgroup><optgroup label="BROCADE (4)"><option value="45">BROCADE 57-1000012-01 revA  — 8GFC SW 850nm 150m</option><option value="46">BROCADE 57-1000012-01 revA  — 8GFC SW 850nm 150m</option><option value="47">BROCADE 58-1000027-01 revA  — 10G AOC 3m</option><option value="48">BROCADE FTRJ1319P1BCL revA  — 1G LX 1310nm 10km</option></optgroup><optgroup label="Cable Matters (1)"><option value="49">Cable Matters 104033-2m-US rev03  — 10G DAC 2m</option></optgroup><optgroup label="CISCO (1)"><option value="50">CISCO SFCT-5716PZ-CS1 rev002  — 1G LX 1310nm 10km</option></optgroup><optgroup label="CISCO-AGILENT (1)"><option value="51">CISCO-AGILENT QFBR-5766LP  — 1G SX 550m</option></optgroup><optgroup label="CISCO-AVAGO (3)"><option value="52">CISCO-AVAGO ABCU-5710RZ-CS4B rev2  — 1G T</option><option value="53">CISCO-AVAGO QFBR-5766LP  — 1G SX 850nm 550m</option><option value="54">CISCO-AVAGO SFCT-5798PZ-CS3 rev0000  — 1G LX 1310nm 10km</option></optgroup><optgroup label="CISCO-FINISAR (22)"><option value="55">CISCO-FINISAR 1000BASE-LX revA0  — 1G LX 10km</option><option value="56">CISCO-FINISAR 1000BASE-LX revA0  — 1G LX 10km</option><option value="57">CISCO-FINISAR FTLF1318P2BCL-C3 revA  — 1G LX 1310nm 10km</option><option value="58">CISCO-FINISAR FTLF1318P2BCL-CS rev0000  — 1G LX 1310nm 10km</option><option value="59">CISCO-FINISAR FTLX1471D3BCL-CS revA  — 10G LR 1310nm 10km</option><option value="60">CISCO-FINISAR FTLX1474D3BCL-CS revA  — 10G LR 1310nm 10km</option><option value="61">CISCO-FINISAR FTLX8570D3BCL-C2 revA  — 10G 850nm 100m</option><option value="62">CISCO-FINISAR FTLX8571D3BCL-C2 revA  — 10G SR 850nm 300m</option><option value="63">CISCO-FINISAR FTRJ-8519-7D-CSC  — 1G SX 550m</option><option value="64">CISCO-FINISAR FTRJ1319P1BTL-C6 revB  — 1G LX 1310nm 10km</option><option value="65">CISCO-FINISAR FTRJ1519P1BCL-CS revA  — 1G LX 1550nm 76km</option><option value="66">CISCO-FINISAR FTRJ8519P1BNL-C6 revA  — 1G SX 850nm 550m</option><option value="67">CISCO-FINISAR GLC-BX-D rev10.0  — 1G 1550nm 10km</option><option value="68">CISCO-FINISAR GLC-BX-U revA  — 1G 1310nm 10km</option><option value="69">CISCO-FINISAR GLC-GE-100FX revA1  — 100M FX 1310nm 2000m</option><option value="70">CISCO-FINISAR GLC-LH-SM revA0  — 1G LX 1310nm 10km</option><option value="71">CISCO-FINISAR GLC-LH-SM revA  — 1G LX 1310nm 10km</option><option value="72">CISCO-FINISAR GLC-T revA  — 1G T</option><option value="73">CISCO-FINISAR GLC-T rev11.0  — 1G T 255km</option><option value="74">CISCO-FINISAR GPB-3524S-L2CD rev11.0  — 1G 1310nm 20km</option><option value="75">CISCO-FINISAR GPB-5324S-L2CD rev11.0  — 1G 1550nm 20km</option><option value="76">CISCO-FINISAR SFP-SX-MM revA1  — 1G SX 850nm 550m</option></optgroup><optgroup label="CISCO-JDSU (1)"><option value="77">CISCO-JDSU PLRXPL-VC-S43-CG revB  — 10G 850nm 100m</option></optgroup><optgroup label="CISCO-LUMENTUM (1)"><option value="78">CISCO-LUMENTUM PLRXPL-SC-S43-CS rev3  — 10G SR 850nm 300m</option></optgroup><optgroup label="CISCO-METHODE (5)"><option value="79">CISCO-METHODE SP7041 revC  — 1G T</option><option value="80">CISCO-METHODE SP7041 revD  — 1G T</option><option value="81">CISCO-METHODE SP7041 revE  — 1G T</option><option value="82">CISCO-METHODE SP7041_E revB  — 1G T</option><option value="83">CISCO-METHODE SP7041-E revE  — 1G T</option></optgroup><optgroup label="CISCO-MOLEX (2)"><option value="84">CISCO-MOLEX 74752-9045 rev07  — 10G DAC 3m</option><option value="85">CISCO-MOLEX 74752-9047 rev07  — 10G DAC 5m</option></optgroup><optgroup label="CISCO-OCP (1)"><option value="86">CISCO-OCP TRPD12MM2EAS-CS revA  — 600M 1310nm 500m</option></optgroup><optgroup label="CISCO-PROLABS (1)"><option value="87">CISCO-PROLABS ZX-SFP-1550-C  — 1GFC LW 1550nm 80km</option></optgroup><optgroup label="CISCO-SUMITOMO (2)"><option value="88">CISCO-SUMITOMO SCP6894-C1-BNE revD  — 1G LX 1550nm 80km</option><option value="89">CISCO-SUMITOMO SCP6894-C1-BNE revD  — 1G LX 1550nm 80km</option></optgroup><optgroup label="CISCO-TYCO (1)"><option value="90">CISCO-TYCO 1-2053783-2 revP  — 10G DAC 3m</option></optgroup><optgroup label="D-Link (1)"><option value="91">D-Link DEM-330T rev0000  — 1G LX 1550nm 10km</option></optgroup><optgroup label="D-LINK (2)"><option value="92">D-LINK DEM-310GT rev0000  — 1G LX 1310nm 10km</option><option value="93">D-LINK DEM-311GT rev0000  — 1G SX 850nm 500m</option></optgroup><optgroup label="DELTA (2)"><option value="94">DELTA LCP-1250B4QDRT-E revA  — 1G LX 1310nm 10km</option><option value="95">DELTA LCP-1250RJ3S rev0000  — 1G T</option></optgroup><optgroup label="EDGE (2)"><option value="96">EDGE BIDI-1.25G-SFP-2  — 1G BX-D 1550nm 20km</option><option value="97">EDGE BIDI-1.25G-SFP-2  — 1G BX-U 1310nm 20km</option></optgroup><optgroup label="Emcore Corp. (1)"><option value="98">Emcore Corp. TXN221200000005  — 1G LX 1310nm 10km</option></optgroup><optgroup label="EtherWAN (1)"><option value="99">EtherWAN EX-1250TSP-MB2LA rev0000  — 1G SX 1310nm 2000m</option></optgroup><optgroup label="FANG HANG (2)"><option value="100">FANG HANG FH-DP1T30SS01 revR  — 10G DAC 1m</option><option value="101">FANG HANG FH-SB3512CDL20 revA0  — 1G 1310nm 20km</option></optgroup><optgroup label="FiberHome (2)"><option value="102">FiberHome 5044002-008-C rev00  — 10G LR 1270nm 20km</option><option value="103">FiberHome 5044002-009 rev00  — 10G LR 1330nm 20km</option></optgroup><optgroup label="FiberStore (1)"><option value="104">FiberStore SFP1G-LX-31 revA0  — 1G LX 1310nm 10km</option></optgroup><optgroup label="Fibertrade (1)"><option value="105">Fibertrade FT-SFP-Copper revA  — 1G T</option></optgroup><optgroup label="FiberTrade (1)"><option value="106">FiberTrade FT-SFP+-WDM-EZR- revA  — 10G 1550nm 80km</option></optgroup><optgroup label="FIBERXON INC. (5)"><option value="107">FIBERXON INC. 3401C-SL10BG-JNP rev10  — 1G SX 1310nm 20km</option><option value="108">FIBERXON INC. 5401C-SL10BG-JNP rev10  — 1G SX 1550nm 20km</option><option value="109">FIBERXON INC. FTM-3012C-SLG rev10  — 1G LX 1310nm 10km</option><option value="110">FIBERXON INC. FTM-3401C-SL2G rev10  — 1G BX-U 1310nm 2000m</option><option value="111">FIBERXON INC. FTM-811XC-L03DG rev10  — 10G SR 850nm 300m</option></optgroup><optgroup label="FIBO (2)"><option value="112">FIBO FT-S1-RJ45 revA0  — 1G T</option><option value="113">FIBO FT-S10-X3120LD revA  — 10G LR 1310nm 20km</option></optgroup><optgroup label="FINISAR CORP. (28)"><option value="114">FINISAR CORP. FCLF-8521-3-ER revA  — 1G T</option><option value="115">FINISAR CORP. FCLF-8521-3-HP revA  — 1G T</option><option value="116">FINISAR CORP. FCLF8520P2BTL-J1 revA  — 1G T</option><option value="117">FINISAR CORP. FCLF8521P2BTL-A5 revA  — 1G T</option><option value="118">FINISAR CORP. FCMJ-8521-3 rev4  — 1G T</option><option value="119">FINISAR CORP. FTLF1318P2BCL-PR revA  — 1G LX 1310nm 4km</option><option value="120">FINISAR CORP. FTLF1318P2BTL-J1 revA  — 1G LX 1310nm 10km</option><option value="121">FINISAR CORP. FTLF8519P2BCL-HP revA  — 1G SX 850nm 300m</option><option value="122">FINISAR CORP. FTLF8519P2BCL-PR revA  — 1G SX 850nm 300m</option><option value="123">FINISAR CORP. FTLF8524P2BNV-BR revA  — 1G SX 850nm 150m</option><option value="124">FINISAR CORP. FTLF8524P2BNV-EC revA  — 1G SX 850nm 150m</option><option value="125">FINISAR CORP. FTLF8524P2BNV-HP revA  — 1G SX 850nm 150m</option><option value="126">FINISAR CORP. FTLF8528P2BCV-IL revA  — 10G SR 850nm 300m</option><option value="127">FINISAR CORP. FTLX1471D3BCL-FC revA  — 10G LR 1310nm 10km</option><option value="128">FINISAR CORP. FTLX1471D3BCL-HP revA  — 10G LR 1310nm 10km</option><option value="129">FINISAR CORP. FTLX8571D3BCL-HD revA  — 10G SR 850nm 300m</option><option value="130">FINISAR CORP. FTLX8571D3BCL-HZ revA  — 10G SR 850nm 300m</option><option value="131">FINISAR CORP. FTLX8571D3BCLHW2 revA  — 10G SR 850nm 100m</option><option value="132">FINISAR CORP. FTLX8571D3BNL-E5 revB  — 10G SR 850nm 300m</option><option value="133">FINISAR CORP. FTRJ-1319-7D  — 1G LX 1310nm 10km</option><option value="134">FINISAR CORP. FTRJ-8519-7 revX1  — 1G SX 550m</option><option value="135">FINISAR CORP. FTRJ1319P1BNL-PT revA  — 1G LX 1310nm 10km</option><option value="136">FINISAR CORP. FTRJ1319P1BTL-PT revA  — 1G LX 1310nm 10km</option><option value="137">FINISAR CORP. FTRJ1322P1BTR-M1 revA  — 600M 1310nm 15km</option><option value="138">FINISAR CORP. FTRJ8519P1BNL-B1 revA  — 10G LR 850nm 32km</option><option value="139">FINISAR CORP. FTRJ8519P1BNL-PT revA  — 1G SX 850nm 300m</option><option value="140">FINISAR CORP. GP-3124-L2C revA  — 1G LX 1310nm 10km</option><option value="141">FINISAR CORP. SFP-BX20-D revA0  — 1G LX 1550nm 22km</option></optgroup><optgroup label="FORTINET (1)"><option value="142">FORTINET FTLX8574D3BCLFTN revA  — 10G SR 850nm 300m</option></optgroup><optgroup label="Foundry Networks (1)"><option value="143">Foundry Networks S.8512.02.D  — 1G SX 850nm 550m</option></optgroup><optgroup label="FOUNDRY NETWORKS (1)"><option value="144">FOUNDRY NETWORKS HFBR-57E0PZ-FD  — 100M FX 1310nm 2000m</option></optgroup><optgroup label="FS (5)"><option value="145">FS S28-PC02 rev01  — 25G DAC 2m</option><option value="146">FS SFP-10GSR-85  — 10G SR 850nm 300m</option><option value="147">FS SFP1G-LX-31 revA  — 1G LX 1310nm 10km</option><option value="148">FS SFP1G-LX-31 revA0  — 1G LX 1310nm 10km</option><option value="149">FS SFP1G-LX-31 revF  — 1G LX 1310nm 10km</option></optgroup><optgroup label="Gigalight (7)"><option value="150">Gigalight FBT-PB-3524S-03C rev11.0  — 1G 1310nm 3km</option><option value="151">Gigalight FBT-PB-5324S-03C rev11.0  — 1G 1550nm 3km</option><option value="152">Gigalight GBP-2733192-L2C revA  — 10G LR 1270nm 20km</option><option value="153">Gigalight GBP-3327192-L2C revA  — 10G LR 1330nm 20km</option><option value="154">Gigalight GPB-3524S-L2CD rev11.0  — 1G 1310nm 20km</option><option value="155">Gigalight GPB-5324S-L2CD rev11.0  — 1G 1550nm 20km</option><option value="156">Gigalight MT-DP-57192-L4CD rev1.1  — 10G ER 1531nm 40km</option></optgroup><optgroup label="HP (1)"><option value="157">HP J4858C revA  — 1G SX 850nm 550m</option></optgroup><optgroup label="HP-A BROCADE (1)"><option value="158">HP-A BROCADE AJ716A revA  — 8GFC SW 850nm 150m</option></optgroup><optgroup label="HP-F (1)"><option value="159">HP-F AJ718A revA  — 8GFC SW 850nm 150m</option></optgroup><optgroup label="HP-F BROCADE (4)"><option value="160">HP-F BROCADE AJ716A revA  — 8GFC SW 850nm 150m</option><option value="161">HP-F BROCADE AJ716A revA  — 10G LR 1270nm 20km</option><option value="162">HP-F BROCADE AJ716A revA  — 10G LR 1270nm 20km</option><option value="163">HP-F BROCADE AJ716A revA  — 8GFC SW 1550nm 150m</option></optgroup><optgroup label="HUAWEI (2)"><option value="164">HUAWEI HPSP2120  — 10G LR 1310nm 20km</option><option value="165">HUAWEI HPSP2120  — 10G LR 1310nm 20km</option></optgroup><optgroup label="IBM (1)"><option value="166">IBM SFP-BX20-U revA0  — 1G LX 1310nm 22km</option></optgroup><optgroup label="Intel Corp (5)"><option value="167">Intel Corp 821-24-031-02 revN  — 10G DAC 3m</option><option value="168">Intel Corp AFBR-703SDZ-IN2 revG2.3  — 10G SR 850nm 300m</option><option value="169">Intel Corp FTLX1471D3BCV-IT revA  — 10G LR 1310nm 10km</option><option value="170">Intel Corp FTLX8571D3BCV-I3 revA  — 10G SR 850nm 300m</option><option value="171">Intel Corp FTLX8571D3BCV-IT revA  — 10G SR 850nm 300m</option></optgroup><optgroup label="Intel Corp. (1)"><option value="172">Intel Corp. SFP+-SR revA  — 10G SR 850nm 300m</option></optgroup><optgroup label="JDS UNIPHASE (1)"><option value="173">JDS UNIPHASE JSPR21S002304  — 2GFC SW 550m</option></optgroup><optgroup label="JDSU (1)"><option value="174">JDSU PLRXPL-SC-S43C1 rev1  — 10G SR 850nm 300m</option></optgroup><optgroup label="Juno (1)"><option value="175">Juno J-SFP-T  — 1G T</option></optgroup><optgroup label="MergeOptics GmbH (2)"><option value="176">MergeOptics GmbH TRX10GDL0610CA02 revC3  — 10G LRM 1310nm 220m</option><option value="177">MergeOptics GmbH TRX10GVP2010CA01 revB02  — 10G SR 850nm 300m</option></optgroup><optgroup label="Methode Elec. (6)"><option value="178">Methode Elec. DM7041 revC  — 1G T</option><option value="179">Methode Elec. SGT00P10DR00103 revA  — 1G T</option><option value="180">Methode Elec. SP7041 revA  — 1G T</option><option value="181">Methode Elec. SP7041-ISS rev-  — 1G T</option><option value="182">Methode Elec. SP7041-M1-JN rev-  — 1G T</option><option value="183">Methode Elec. SP7041-SCI rev-  — 1G T</option></optgroup><optgroup label="MicroOptics (1)"><option value="184">MicroOptics MO-L-ST1 revA  — 1G T</option></optgroup><optgroup label="Mikrotik (3)"><option value="185">Mikrotik S-31DLC20D  — 1G LX 1310nm 20km</option><option value="186">Mikrotik S-85DLC05D rev1  — 1G SX 850nm 550m</option><option value="187">Mikrotik S-RJ01 rev1.0  — 1G T</option></optgroup><optgroup label="MikroTik (1)"><option value="188">MikroTik S+DA0001 revD  — 10G AOC 7m</option></optgroup><optgroup label="Modultech (13)"><option value="189">Modultech 10GB-SFP-CW49 rev1.0  — 10G LR 1490nm 80km</option><option value="190">Modultech MT-BP-23192-L2CD revA  — 10G LR 1270nm 20km</option><option value="191">Modultech MT-BP-32192-L2CD rev1.0  — 10G LR 1330nm 20km</option><option value="192">Modultech MT-E-GB-P1RC rev11.0  — 1G T</option><option value="193">Modultech MT-P-3124-L2C rev1.0  — 1G LX 1310nm 10km</option><option value="194">Modultech MT-P-8524-S5C rev1.0  — 1G SX 850nm 550m</option><option value="195">Modultech MT-P-8524-S5C revA0  — 1G LX 850nm 550m</option><option value="196">Modultech MT-PB-3524S-03C rev1.0  — 1GFC 1310nm 3km</option><option value="197">Modultech MT-PB-3524S-L2C rev1.0  — 1G 1310nm 10km</option><option value="198">Modultech MT-PB-5324S-03C rev1.0  — 1GFC 1550nm 3km</option><option value="199">Modultech MT-PP-85192-SR rev1.0  — 10G SR 850nm 300m</option><option value="200">Modultech SFP-BX-D55 rev1.0  — 1G 1550nm 40km</option><option value="201">Modultech SFP-BX-U31 rev1.0  — 1G 1310nm 40km</option></optgroup><optgroup label="Molex Inc. (2)"><option value="202">Molex Inc. 74752-9056 revC  — 10G</option><option value="203">Molex Inc. 74752-9506  — 12G DAC 3m</option></optgroup><optgroup label="MOXA (3)"><option value="204">MOXA SFP-1G10ALC rev0000  — 1G LX 1310nm 10km</option><option value="205">MOXA SFP-1GLSXLC rev0000  — 1G SX 1310nm 2000m</option><option value="206">MOXA SFP-1GLXLC rev0000  — 1G LX 1310nm 40km</option></optgroup><optgroup label="MRV COMM, INC. (1)"><option value="207">MRV COMM, INC. SFP-DGD-SX  — 1G SX 850nm 550m</option></optgroup><optgroup label="My D-link (1)"><option value="208">My D-link MYDEM-311GT rev0000  — 1G SX 850nm 500m</option></optgroup><optgroup label="NATEKS (1)"><option value="209">NATEKS FG-FO-L1.1 rev0000  — 100M LX 1310nm 40km</option></optgroup><optgroup label="NGoptics (1)"><option value="210">NGoptics NGSBS1G20D-53 revA  — 1GFC 1550nm 20km</option></optgroup><optgroup label="NGOPTICS (1)"><option value="211">NGOPTICS NGSBS1G20D-35 revA  — 1GFC 1310nm 20km</option></optgroup><optgroup label="OCP (1)"><option value="212">OCP TRPNG1ZXIBGS-TM rev0000  — 1G LX 1550nm 80km</option></optgroup><optgroup label="OEM (99)"><option value="213">OEM 10G SFP cable revN  — 10G DAC 1m</option><option value="214">OEM 10GB-SFP-U27-JN rev1.0  — 10G LR 1270nm 40km</option><option value="215">OEM 584990002 revA  — 10G DAC 3m</option><option value="216">OEM AM1B-SFP-GE-SM15  — 1G BX-D 1550nm 3km</option><option value="217">OEM APSPB23B33CDL40 rev0011  — 10G ER 1270nm 40km</option><option value="218">OEM BL-SFPGM850-05L revA0  — 1G SX 850nm 550m</option><option value="219">OEM CL-SFP-WDM-20-55 rev10.0  — 1G LX 1550nm 20km</option><option value="220">OEM CLSFPWDM3-55SCDD  — 1G LX 1550nm 3km</option><option value="221">OEM ESB3512-3SCD3 revA0  — 1G 1310nm 3km</option><option value="222">OEM FBT-3512-S0 revA0  — 1G LX 1310nm 3km</option><option value="223">OEM FH-SB541TCDL80 revA0  — 1G 1550nm 80km</option><option value="224">OEM GE-31A revA0  — 1G BX-U 1310nm 20km</option><option value="225">OEM GE-49A revA0  — 1G BX-D 1490nm 80km</option><option value="226">OEM GE-LX revA0  — 1G LX 1310nm 20km</option><option value="227">OEM GLC-BX-U revA  — 1GFC 1310nm 10km</option><option value="228">OEM GLC-FE-BX-D revA  — 100M FX 1550nm 20km</option><option value="229">OEM GLOTST08LC2-1310 revA  — 10G LR 1310nm 10km</option><option value="230">OEM GR-SP10-W2740L-D revA  — 10G ER 1270nm 40km</option><option value="231">OEM J4858C revA  — 1G SX 850nm 550m</option><option value="232">OEM J4859D-OEM revA  — 1G LX 1310nm 20km</option><option value="233">OEM JD094B revA0  — 10G LR 1310nm 10km</option><option value="234">OEM JD094B-40-1310 revA  — 10G LR 1310nm 40km</option><option value="235">OEM JD094B-40-1350 revA  — 10G LR 1350nm 40km</option><option value="236">OEM JD094B-40-1390 revA  — 10G LR 1390nm 40km</option><option value="237">OEM JD094B-40-1610  — 10G LR 1610nm 40km</option><option value="238">OEM ML-30R/D  — 1G BX-D 1550nm 20km</option><option value="239">OEM ML-30T/D revA  — 1GFC 1310nm 20km</option><option value="240">OEM ML-30T/D  — 1G BX-U 1310nm 20km</option><option value="241">OEM MT-E-GB-P1RC rev11.0  — 1G T</option><option value="242">OEM NV-BP-32192-L2CD revV04  — 10G LR 1330nm 20km</option><option value="243">OEM NV-E-GB-P3RC rev11.0  — 1G T</option><option value="244">OEM NV-PP-31192-LRC revV04  — 10G LR 1310nm 10km</option><option value="245">OEM OEM-PSG3 revA  — 1G T</option><option value="246">OEM OP-MCP849L1SD-70  — 10G ER 1490nm 70km</option><option value="247">OEM OTP-46303D-3  — 1G LX 1310nm 3km</option><option value="248">OEM OTP-46503D-3  — 1G LX 1550nm 3km</option><option value="249">OEM OTP4632D-3L  — 1G LX 1310nm 20km</option><option value="250">OEM S&gt;SFPP-MM-03-85- revA  — 10G SR 850nm 300m</option><option value="251">OEM SFP-1.25G-1310 revA0  — 1G LX 1310nm 20km</option><option value="252">OEM SFP-1.25G-1310  — 1G LX 1310nm 10km</option><option value="253">OEM SFP-1.25G-1310 revA0  — 1G LX 1310nm 10km</option><option value="254">OEM SFP-1.25G-1310D revA0  — 1G LX 1310nm 20km</option><option value="255">OEM SFP-1.25G-1310D revA0  — 1G LX 1310nm 10km</option><option value="256">OEM SFP-1.25G-1310D revA0  — 1G LX 1310nm 10km</option><option value="257">OEM SFP-10G-D80-T rev1.0  — 10G ER 80km</option><option value="258">OEM SFP-10G-ER revB  — 10G ER 1550nm 40km</option><option value="259">OEM SFP-10G-LR rev1.0  — 10G LR 1310nm 10km</option><option value="260">OEM SFP-10G-LR revB  — 10G LR 1310nm 10km</option><option value="261">OEM SFP-10G-SR-EO revA  — 10G SR 850nm 300m</option><option value="262">OEM SFP-10G23-60D revA  — 10G LR 1270nm 60km</option><option value="263">OEM SFP-1SM-1310-3SC revA0  — 1G LX 1310nm 20km</option><option value="264">OEM SFP-1SM-1310-3SC revA0  — 1G LX 1310nm 20km</option><option value="265">OEM SFP-1SM-1550-3SC revA0  — 1G LX 1550nm 3km</option><option value="266">OEM SFP-1SM-1550-3SC revA0  — 1G LX 1550nm 20km</option><option value="267">OEM SFP-2SM-20LC revA0  — 1G LX 1310nm 20km</option><option value="268">OEM SFP-BIDI-20KM rev1.0  — 1G 1310nm 20km</option><option value="269">OEM SFP-BX-D55 rev1.0  — 1G LX 1310nm 3km</option><option value="270">OEM SFP-BX-D55 revA  — 1G LX 1550nm 40km</option><option value="271">OEM SFP-BX-D55 rev1.0  — 1G 1550nm 20km</option><option value="272">OEM SFP-BX-D55 revA  — 1G LX 1270nm 20km</option><option value="273">OEM SFP-BX-D55-JN rev1.0  — 1G BX-D 1550nm 20km</option><option value="274">OEM SFP-BX-U31 rev1.0  — 1G 1310nm 20km</option><option value="275">OEM SFP-BX-U31-JN rev1.0  — 1G BX-U 1310nm 20km</option><option value="276">OEM SFP-CWDM-1610 revA  — 1G 1610nm 80km</option><option value="277">OEM SFP-FE-100BX-U rev1.0  — 100M 1310nm 20km</option><option value="278">OEM SFP-G-T rev1.0  — 1G T</option><option value="279">OEM SFP-GE-T  — 1G T</option><option value="280">OEM SFP-H10GB-CU1M  — 10G DAC 1m</option><option value="281">OEM SFP-H10GB-CU1M revR  — 10G DAC 1m</option><option value="282">OEM SFP-LX revA0  — 1G LX 1310nm 10km</option><option value="283">OEM SFP-LX-10 revV1.0  — 1G LX 1310nm 10km</option><option value="284">OEM SFP-LX-SM revA0  — 1G LX 1310nm 10km</option><option value="285">OEM SFP-RJ45/10~1000 rev1.00  — 1G T</option><option value="286">OEM SFP-S-5335LC20D  — 1G LX 1550nm 20km</option><option value="287">OEM SFP-T rev10.0  — 1G T</option><option value="288">OEM SFP-T rev10.0  — 1G T</option><option value="289">OEM SFP-WDM1.25G-31 revA0  — 1G 1310nm 20km</option><option value="290">OEM SFP-WDM1.25G-31 rev1.0  — 1G LX 1310nm 3km</option><option value="291">OEM SFP-WDM1.25G-55 rev1.0  — 1G LX 1550nm 3km</option><option value="292">OEM SFP-WDM1.25G-55 revA0  — 1G 1550nm 10km</option><option value="293">OEM SFP-WDM155M-31 revA  — 100M 1310nm 20km</option><option value="294">OEM SFP-WDM155M-55 revA  — 100M 1550nm 20km</option><option value="295">OEM SFP+ BIDI-20 revA  — 10G LR 1270nm 20km</option><option value="296">OEM SFP+ BIDI-20 revA  — 10G LR 1270nm 20km</option><option value="297">OEM SFP+ BIDI-20 revA  — 10G LR 1330nm 20km</option><option value="298">OEM SFP+ LR revA  — 10G LR 1310nm 20km</option><option value="299">OEM SFP+-10G-SRDP revA  — 10G SR 850nm 300m</option><option value="300">OEM SFP+-1696-2357 revA  — 10G ER 1550nm 40km</option><option value="301">OEM SFP+DA3 rev1.0  — 10G DAC 1m</option><option value="302">OEM SFP10-LR revA  — 10G LR 1310nm 10km</option><option value="303">OEM SFP100-T rev1.0  — 100M LX</option><option value="304">OEM SP7041-E revE  — 1G T</option><option value="305">OEM SPT-PB351G-L20 revA0  — 1G LX 1310nm 20km</option><option value="306">OEM SPT-PC51TG-70D rev0001  — 10G 1510nm 70km</option><option value="307">OEM STICK  — 1G LX 1310nm 20km</option><option value="308">OEM WDM-1.25G-13-S03 revA0  — 1G LX 1310nm 3km</option><option value="309">OEM XFP-10G-BX10-U revB  — 10G LR 1270nm 20km</option><option value="310">OEM YXF-GE-B35S-20D  — 1GFC 1310nm 20km</option><option value="311">OEM YXF-GE-B53S-20D  — 1GFC 1550nm 20km</option></optgroup><optgroup label="OPL (1)"><option value="312">OPL SFP-W35-03-SC revA0  — 1G 1310nm 3km</option></optgroup><optgroup label="Optcore (1)"><option value="313">Optcore OPB1250-3520DCR revA0  — 1G 1310nm 20km</option></optgroup><optgroup label="OPTCORE (1)"><option value="314">OPTCORE SFPP-T rev1  — 10G SR 850nm 300m</option></optgroup><optgroup label="OPTEC-EXTREME (1)"><option value="315">OPTEC-EXTREME P.1396.10  — 10G LR 1310nm 10km</option></optgroup><optgroup label="OptiCin (5)"><option value="316">OptiCin SFP-BiDi.DDM3.03 rev1.0  — 1G LX 1310nm 3km</option><option value="317">OptiCin SFP-BiDi.DDM5.03 rev1.0  — 1G LX 1550nm 3km</option><option value="318">OptiCin SFP-CWDM47.120  — 1G LX 1470nm 120km</option><option value="319">OptiCin SFP-FX-B3-SGMII rev1.0  — 100M FX 1310nm 10km</option><option value="320">OptiCin SFP-WDM5.03  — 1G LX 1550nm 3km</option></optgroup><optgroup label="optronic (1)"><option value="321">optronic TRMF132155LC3c revA  — 100M LX 1310nm 2000m</option></optgroup><optgroup label="OptTech (1)"><option value="322">OptTech OTSFP-100-FX revA  — 100M LX 1310nm 2000m</option></optgroup><optgroup label="OSNOVO (1)"><option value="323">OSNOVO SFPS2LC15G-1310 rev02  — 1G LX 1310nm 20km</option></optgroup><optgroup label="QTECH (2)"><option value="324">QTECH QSC-SFP10GE-1310 rev1.0  — 1G LX 1310nm 10km</option><option value="325">QTECH QSC-SFP20GEW revT1  — 100M FX 1310nm 20km</option></optgroup><optgroup label="RCI (1)"><option value="326">RCI SFP-CWDM-160-61 rev10  — 1G LX 1610nm 160km</option></optgroup><optgroup label="SKEO (4)"><option value="327">SKEO SK-SFP-W1-31-3S- rev1.0  — 1GFC 1310nm 3km</option><option value="328">SKEO SKSFP-W01-3120SD revA  — 100M 1310nm 20km</option><option value="329">SKEO SKSFPX1-31-20L-D revA  — 1G LX 1310nm 20km</option><option value="330">SKEO SKSP10W103320LD revB  — 10G LR 1330nm 20km</option></optgroup><optgroup label="SNR (2)"><option value="331">SNR SFP+C51-70 rev1.0  — 10G 1510nm 70km</option><option value="332">SNR SNR-SFP-CWDM1310 revA  — 1G 1550nm 80km</option></optgroup><optgroup label="SOURCEPHOTONICS (3)"><option value="333">SOURCEPHOTONICS FTM-9612C-SL10G rev10  — 1G BX-U 1310nm 10km</option><option value="334">SOURCEPHOTONICS SPFEFXIDFM rev10  — 100M FX 1310nm 2000m</option><option value="335">SOURCEPHOTONICS SPP10E-LRCDFF-AY rev10  — 10G LR 1310nm 10km</option></optgroup><optgroup label="SumitomoElectric (7)"><option value="336">SumitomoElectric SBP6H44-AM-BN-49 revA  — 1G BX-D 1490nm 10km</option><option value="337">SumitomoElectric SBP6H54-L4-BN-31 revN  — 1G 1310nm 15km</option><option value="338">SumitomoElectric SBP6H54-L4-BN-49 revN  — 1G 1490nm 15km</option><option value="339">SumitomoElectric SCP6878-L5-XVE revE  — 2.5G 1550nm 80km</option><option value="340">SumitomoElectric SCP6F01-L4-CWE revH  — 200M 1310nm 15km</option><option value="341">SumitomoElectric SCP6G02-N8-AUE revN  — 600M 1310nm 15km</option><option value="342">SumitomoElectric SCP6G08-N8-AUE revA  — 2.5G 1310nm 15km</option></optgroup><optgroup label="SUPERXON LTD. (1)"><option value="343">SUPERXON LTD. SOGQ4321-PSGB rev10  — 2.5G 1490nm 20km</option></optgroup><optgroup label="TRIOTRONIK (1)"><option value="344">TRIOTRONIK LSFP-SX-UNI revA  — 1G SX 850nm 550m</option></optgroup><optgroup label="Tyco Electronics (1)"><option value="345">Tyco Electronics 2074977-2 revE  — 10G DAC 3m</option></optgroup><optgroup label="USource (1)"><option value="346">USource USFP-LOR53 rev1.0  — 1GFC 1550nm 3km</option></optgroup><optgroup label="VIMCOM (1)"><option value="347">VIMCOM SFP-LX.LC.20 revA0  — 1G LX 1310nm 20km</option></optgroup></select>
         </label>
       </div>
       <div class="row center" id="ispUploadRow" style="display:none">
@@ -342,24 +344,17 @@
           <input id="ispCloneFile" type="file" accept=".bin,application/octet-stream">
         </label>
       </div>
-      <div class="row center" id="ispBusRow" style="display:none">
-        <label class="field"><span>コピー元バス</span>
-          <select id="ispCopySrcBus"><option value="0">Bus 0 (IO12/13)</option><option value="1">Bus 1 (IO26/27)</option></select>
-        </label>
-        <button id="ispCopyReadBtn" class="secondary" disabled>コピー元を読込</button>
-        <span class="hint">コピー元バスの 0x50 を I2C で読み、書込元にします（ISP 開始前に実行）。</span>
-      </div>
       <div id="ispSrcPreview" class="hint"></div>
     </fieldset>
 
     <div class="row center">
       <label class="field" style="flex-direction:row;align-items:center;gap:.4rem">
-        <input id="ispKeepSn" type="checkbox" checked><span>実 SN・製造日を維持</span>
+        <input id="ispKeepSn" type="checkbox" checked=""><span>実 SN・製造日を維持</span>
       </label>
     </div>
     <div class="row center">
-      <button id="ispCloneRead" disabled>現在の A0 を読む</button>
-      <button id="ispCloneWrite" class="danger" disabled>このモジュールへ書込 (checksum再計算 + verify)</button>
+      <button id="ispCloneRead" disabled="">現在の A0 を読む</button>
+      <button id="ispCloneWrite" class="danger" disabled="">このモジュールへ書込 (checksum再計算 + verify)</button>
       <span id="ispCloneInfo" class="hint"></span>
     </div>
     <pre id="ispCloneOut" class="out">—</pre>
@@ -368,11 +363,12 @@
   <!-- ============ LOG ============ -->
   <section class="card">
     <h2>📜 ログ <button id="logClear" class="ghost" style="font-size:.78rem">クリア</button></h2>
-    <pre id="log"></pre>
+    <pre id="log">[21:17:29] プリセット 348 件を読込
+</pre>
   </section>
 
   <p class="hint" style="text-align:center; margin: 1.5rem 0;">
-    SFP Flash Web — WebHID &harr; RP2040 I2C ゲートウェイ経由
+    SFP / QSFP Flash Web — WebHID ↔ RP2040 I2C ゲートウェイ経由
   </p>
 
 </main>
@@ -416,6 +412,7 @@ let seq = 1;
 const pending = new Map();
 let lastDump = null;
 let lastDumpSn = "";
+let lastDumpProfile = null;
 let loopAbort = false;
 let loopRunning = false;
 let presets = [];
@@ -432,19 +429,24 @@ function log(msg) {
   el.scrollTop = el.scrollHeight;
 }
 function hex(n, w = 2) { return n.toString(16).toUpperCase().padStart(w, "0"); }
-/* アクティブなタブのバスセレクタを参照（バス切替は各タブ内） */
-function selectedBus() {
-  const active = document.querySelector(".panel.active");
-  const tab = active ? active.dataset.panel : "dump";
-  const id = tab === "clone" ? "busClone" : tab === "dwdm" ? "busDwdm" : "busDump";
-  return Number($(id).value);
+/* アクティブなタブのモジュール種別セレクタ → プロファイル。
+ * 種別でバスが自動的に決まる (SFP=bus0 / QSFP・QSFP28=bus1)。 */
+function selectedProfile(tab) {
+  if (!tab) {
+    const active = document.querySelector(".panel.active");
+    tab = active ? active.dataset.panel : "dump";
+  }
+  const id = tab === "clone" ? "typeClone" : tab === "dwdm" ? "typeDwdm" : "typeDump";
+  const el = $(id);
+  return PROFILES[el ? el.value : "sfp"] || PROFILES.sfp;
 }
+function selectedBus() { return selectedProfile().bus; }
 
 function setConnected(on) {
   $("connect").disabled = on;
   $("disconnect").disabled = !on;
-  for (const id of ["dumpBtn","dwdmBtn","dwdmReadBtn","copyReadBtn",
-    "ispBegin","ispEnd","ispCopyReadBtn"]) $(id).disabled = !on;
+  for (const id of ["dumpBtn","dwdmBtn","dwdmReadBtn",
+    "ispBegin","ispEnd"]) $(id).disabled = !on;
   if (!on) setIspActive(false);
   refreshCloneButtons();
   const s = $("status");
@@ -580,7 +582,7 @@ function checksumHtml(c) {
 }
 
 /* ---------- SFF-8472 パース ---------- */
-const CONNECTORS = { 0x07:"LC", 0x0B:"Optical Pigtail", 0x21:"Copper Pigtail", 0x22:"RJ45" };
+const CONNECTORS = { 0x07:"LC", 0x0B:"Optical Pigtail", 0x0C:"MPO 1x12", 0x21:"Copper Pigtail", 0x22:"RJ45", 0x23:"No separable connector", 0x27:"MPO 2x16" };
 const IDENTIFIERS = { 0x00:"Unknown", 0x01:"GBIC", 0x02:"Module/connector soldered", 0x03:"SFP/SFP+" };
 function sffSummary(b) {
   return { vendor: ascii(b,20,35), pn: ascii(b,40,55), sn: ascii(b,68,83) };
@@ -604,6 +606,149 @@ function renderSff(b, target) {
   if (b.length >= 96) html += `<p style="margin:.6rem 0 0">${checksumHtml(calcChecksum(b))}</p>`;
   html += `<h3 class="sub" style="margin-top:.7rem">RAW (0x00-0x${hex(b.length-1)})</h3><pre>${hexDump(b, 0)}</pre>`;
   target.innerHTML = html;
+}
+
+/* ---------- SFF-8636 パース (QSFP / QSFP+ / QSFP28) ----------
+ * QSFP は I2C アドレス 0x50 のみ。下位ページ(0-127)＋上位ページ 00h(128-255)に
+ * シリアル ID 情報が載る。識別子(byte0): 0x0C=QSFP / 0x0D=QSFP+ / 0x11=QSFP28。 */
+const QSFP_IDS = { 0x0C:"QSFP", 0x0D:"QSFP+", 0x11:"QSFP28", 0x0E:"CXP", 0x12:"CXP2", 0x18:"QSFP-DD" };
+function qsfpSummary(b) {
+  return { vendor: ascii(b,148,163), pn: ascii(b,168,183), sn: ascii(b,196,211) };
+}
+/* SFF-8636 チェックサム: CC_BASE(191)=Σ128..190 / CC_EXT(223)=Σ192..222 */
+function calcChecksumQsfp(b) {
+  let base = 0, ext = 0;
+  for (let i = 128; i <= 190; i++) base += b[i];
+  for (let i = 192; i <= 222; i++) ext += b[i];
+  base &= 0xff; ext &= 0xff;
+  return { base, ext, baseOrg: b[191], extOrg: b[223], baseOk: base === b[191], extOk: ext === b[223] };
+}
+function fixChecksumQsfp(b) { const c = calcChecksumQsfp(b); b[191] = c.base; b[223] = c.ext; return b; }
+/* 実 SN(196–211)・製造日(212–219) を base に移植してチェックサム再計算 */
+function mergeSnIntoQsfp(base, org) {
+  for (let i = 196; i <= 211; i++) base[i] = org[i];
+  for (let i = 212; i <= 219; i++) base[i] = org[i];
+  fixChecksumQsfp(base);
+  return base;
+}
+function renderSff8636(b, target) {
+  const wl = (b[186] << 8) | b[187];
+  const rows = [
+    ["Identifier",  QSFP_IDS[b[0]] || "0x" + hex(b[0])],
+    ["Connector",   CONNECTORS[b[130]] || "0x" + hex(b[130])],
+    ["Vendor name", ascii(b, 148, 163)],
+    ["Vendor OUI",  hex(b[165]) + "-" + hex(b[166]) + "-" + hex(b[167])],
+    ["Vendor PN",   ascii(b, 168, 183)],
+    ["Vendor Rev",  ascii(b, 184, 185)],
+    ["Wavelength",  wl ? (wl / 20).toFixed(2) + " nm" : "-"],
+    ["Vendor SN",   ascii(b, 196, 211)],
+    ["Date code",   ascii(b, 212, 219)],
+  ];
+  let html = "<table><tbody>";
+  for (const [k, v] of rows) html += `<tr><th>${k}</th><td class='mono'>${v || "-"}</td></tr>`;
+  html += "</tbody></table>";
+  if (b.length >= 224) html += `<p style="margin:.6rem 0 0">${checksumHtml(calcChecksumQsfp(b))}</p>`;
+  html += `<h3 class="sub" style="margin-top:.7rem">RAW (0x00-0x${hex(b.length-1)})</h3><pre>${hexDump(b, 0)}</pre>`;
+  target.innerHTML = html;
+}
+/* QSFP: 上位ページ 00h を選択してから 0x50 を 256B 読み出す。
+ * 重要: 下位ページ(0–127)と上位ページ(128–255)を「別トランザクション」で読む。
+ *   1 回の I2C 連続読みで 127→128 の境界を跨ぐと、規格非準拠の個体(QSFP28 含む)では
+ *   上位ページに切り替わらず下位ページのミラーや NACK を返し、Vendor名/PN/CC_BASE が壊れる。
+ * flat memory 個体は byte127 が読取専用のことがあるので page 選択の失敗は無視。 */
+async function readQsfpId(bus) {
+  await qsfpPageSelect(bus, 0x00);
+  const buf = new Uint8Array(256);
+  buf.set(await readBytes(bus, A0, 0, 128), 0);       // 下位ページ(0–127)
+  buf.set(await readBytes(bus, A0, 128, 128), 128);   // 上位ページ 00h(128–255)
+  return buf;
+}
+
+/* ---------- QSFP 書込みの MSA 準拠ヘルパ (QSFP MSA §6.5 / §6.6.1.8) ----------
+ *  ・連続書込は最大 4 バイト (§6.5.5「up to a 4 sequential byte write」)。
+ *  ・書込後の tWR(最大 40ms, Table 12) 中は管理 I/F が応答しないため、
+ *    Acknowledge Polling(§6.5.6) 相当として NACK の間リトライして待つ。
+ *  ・Serial ID(上位ページ 00h, 128–255) は MSA 上「読み取り専用」(§6.6.2)。書込可否は
+ *    ベンダ依存で、パスワードエントリ(下位ページ 123–126, §6.6.1.8)で書込保護を
+ *    解除できる個体がある。新品ホストPWの初期値は 0x00001011(byte123 が上位)。 */
+const QSFP_WR_MAX     = 4;                          // MSA §6.5.5 連続書込上限
+const QSFP_PW_DEFAULT = [0x00, 0x00, 0x10, 0x11];   // MSA §6.6.1.8 ホストPW初期値 0x00001011
+const QSFP_PW_ZERO    = [0x00, 0x00, 0x00, 0x00];   // power-up/reset 既定
+
+/* 最大4バイト連続書込 + ACK ポーリング(tWR<=40ms 待ち)。volatile/EEPROM 双方で安全。 */
+async function writeBytesQsfp(bus, addr, reg, bytes) {
+  let off = 0;
+  while (off < bytes.length) {
+    const cur = (reg + off) & 0xff;
+    const n = Math.min(QSFP_WR_MAX, bytes.length - off);
+    const chunk = Array.from(bytes.slice(off, off + n));
+    let ok = false;
+    for (let t = 0; t < 12 && !ok; t++) {            // 12*5ms=60ms > tWR(40ms)
+      const r = await sendCommand(CMD.WRITE, { bus, addr, reg: cur, len: n, data: chunk });
+      if (r.status === 0) ok = true; else await sleep(5);
+    }
+    if (!ok) throw new Error(`QSFP WRITE NACK @0x${hex(cur)} (tWR か書込保護)`);
+    off += n;
+  }
+}
+/* ページ選択 byte127 (volatile R/W)。flat memory 個体では読取専用のことがあるので失敗は無視。 */
+async function qsfpPageSelect(bus, page) {
+  try { await writeBytesQsfp(bus, A0, 127, Uint8Array.of(page & 0xff)); } catch (e) {}
+}
+/* パスワードエントリ 123–126 (volatile・write only)。Serial ID 書込保護の解除用 (§6.6.1.8)。 */
+async function qsfpEnterPassword(bus, pw) {
+  try { await writeBytesQsfp(bus, A0, 123, Uint8Array.from(pw)); } catch (e) {}
+}
+
+/* QSFP/QSFP28 クローン書込: 上位ページ 00h(128–255 = Serial ID) を実SN維持で上書き。
+ *  MSA では Serial ID は読取専用のため、PW解除 → 4B連続書込 → tWR待ち → ベリファイ。
+ *  下位ページ(0–127)は揮発監視/制御領域なので書かない。
+ *  ※ Avago/Broadcom 等、I2C 経由では一切書込めない個体もある(その場合 diff>0 のまま)。 */
+async function cloneQsfp(bus, src) {
+  if (src.length < 224) throw new Error("QSFP 書込元は 224 バイト以上必要です(上位ページ 00h を含む 256B 推奨)");
+  const org = await readQsfpId(bus);
+  const sn = ascii(org, 196, 211);
+  const merged = new Uint8Array(256);
+  merged.set(src.slice(0, 256));
+  mergeSnIntoQsfp(merged, org);
+
+  /* PW無し → 既定PW(00001011) → 全0PW の順で試行。1回でも一致したら確定。
+   * 書込が NACK(読取専用個体)でも例外で中断せず、次のPWへフォールバックする。 */
+  let rb, diff = 256, pwUsed = "none";
+  for (const [label, pw] of [["none", null], ["00001011", QSFP_PW_DEFAULT], ["00000000", QSFP_PW_ZERO]]) {
+    await qsfpPageSelect(bus, 0x00);
+    if (pw) await qsfpEnterPassword(bus, pw);
+    try { await writeBytesQsfp(bus, A0, 128, merged.slice(128, 256)); }   // 上位ページ 00h のみ
+    catch (e) { log(`QSFP 書込NACK (PW=${label}): ${e.message}`); }
+    await sleep(45);                                                      // 最終 tWR(<=40ms) 待ち
+    rb = await readQsfpId(bus);
+    diff = 0; for (let i = 128; i < 256; i++) if (rb[i] !== merged[i]) diff++;
+    pwUsed = label;
+    if (diff === 0) break;
+    log(`QSFP PW=${label} で不一致(${diff}B)`);
+  }
+  return { sn, diff, pwUsed, summary: qsfpSummary(rb), ck: calcChecksumQsfp(rb) };
+}
+
+/* ---------- モジュールプロファイル (種別 → バス / 解析 / 書込) ----------
+ * SFP=bus0 (SFF-8472, 0x50/0x51) / QSFP・QSFP28=bus1 (SFF-8636, 0x50 のみ)。 */
+const PROFILES = {
+  sfp: {
+    type: "sfp", name: "SFP / SFP+", bus: 0, minSrc: 96, ckMin: 96, filePrefix: "sfp",
+    readId: bus => readBytes(bus, A0, 0, DUMP_LEN),
+    summary: sffSummary, render: renderSff, calcChk: calcChecksum,
+    clone: cloneToModule, presence: a => a.includes(A0) && a.includes(A2),
+  },
+  qsfp: {
+    type: "qsfp", name: "QSFP / QSFP28", bus: 1, minSrc: 224, ckMin: 224, filePrefix: "qsfp",
+    readId: readQsfpId,
+    summary: qsfpSummary, render: renderSff8636, calcChk: calcChecksumQsfp,
+    clone: cloneQsfp, presence: a => a.includes(A0),
+  },
+};
+/* バイト列から種別を推定（プレビュー用。書込先は選択中の種別が優先） */
+function detectProfile(b) {
+  return (b.length >= 224 && QSFP_IDS[b[0]]) ? PROFILES.qsfp : PROFILES.sfp;
 }
 
 /* =====================================================================
@@ -648,56 +793,80 @@ $("nav").addEventListener("click", e => {
  * ===================================================================== */
 $("dumpBtn").addEventListener("click", async () => {
   try {
-    const bus = selectedBus();
+    const prof = selectedProfile("dump");
     $("dumpInfo").textContent = "読み出し中...";
-    const bytes = await readBytes(bus, A0, 0, DUMP_LEN);
+    const bytes = await prof.readId(prof.bus);
     lastDump = bytes;
-    lastDumpSn = ascii(bytes, 68, 83);
-    renderSff(bytes, $("dumpParsed"));
+    lastDumpProfile = prof;
+    const s = prof.summary(bytes);
+    lastDumpSn = s.sn;
+    prof.render(bytes, $("dumpParsed"));
     $("dumpSave").disabled = false;
-    const s = sffSummary(bytes);
-    $("dumpInfo").textContent = `${s.vendor} / ${s.pn} / SN ${s.sn}`;
-    log(`DUMP OK: ${s.vendor} / ${s.pn} / SN ${s.sn}`);
+    $("dumpInfo").textContent = `[${prof.name}] ${s.vendor} / ${s.pn} / SN ${s.sn}`;
+    log(`DUMP OK [${prof.name}]: ${s.vendor} / ${s.pn} / SN ${s.sn}`);
   } catch (e) { $("dumpParsed").innerHTML = ""; $("dumpInfo").textContent = "エラー: " + e.message; log(e.message); }
 });
 $("dumpSave").addEventListener("click", () => {
   if (!lastDump) return;
   const sn = lastDumpSn || "dump";
-  download(lastDump, `sfp-${sn}.bin`);
-  log(`ダンプを sfp-${sn}.bin で保存`);
+  const pfx = lastDumpProfile ? lastDumpProfile.filePrefix : "sfp";
+  download(lastDump, `${pfx}-${sn}.bin`);
+  log(`ダンプを ${pfx}-${sn}.bin で保存`);
 });
 
 /* =====================================================================
  *  ② クローン書込（実 SN 維持）
  * ===================================================================== */
-/* プリセット読込 (presets.json) → 各ピッカーへ反映 */
+/* プリセット読込 (種別ごとに 5 ファイル) → 各ピッカーへ反映。
+ * ファイルごとに form を付与し、書込先モジュール(typeClone)に応じて表示を絞り込む。 */
+const PRESET_SOURCES = [
+  { url: "preset-sfp.json",      form: "SFP"    },
+  { url: "preset-sfp-plus.json", form: "SFP+"   },
+  { url: "preset-sfp28.json",    form: "SFP28"  },
+  { url: "preset-qsfp.json",     form: "QSFP"   },
+  { url: "preset-qsfp28.json",   form: "QSFP28" },
+];
+/* 書込先モジュール種別(プロファイル type) → そのモジュールで使える form 群 */
+const FORM_GROUPS = {
+  sfp:  ["SFP", "SFP+", "SFP28"],
+  qsfp: ["QSFP", "QSFP28"],
+};
 async function loadPresets() {
-  try {
-    const res = await fetch("presets.json", { cache: "no-cache" });
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const json = await res.json();
-    presets = json.presets || [];
-    for (const pk of PICKERS) pk.render("");
-    if (presets.length) { for (const pk of PICKERS) await pk.loadSelected(); }
-    log(`プリセット ${presets.length} 件を読込`);
-  } catch (e) {
-    for (const pk of PICKERS) pk.fail(e.message);
-    log("プリセット読込失敗: " + e.message);
+  const merged = [];
+  const errors = [];
+  for (const src of PRESET_SOURCES) {
+    try {
+      const res = await fetch(src.url, { cache: "no-cache" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const json = await res.json();
+      for (const p of (json.presets || [])) merged.push({ ...p, form: p.form || src.form });
+    } catch (e) {
+      errors.push(`${src.url}: ${e.message}`);
+    }
   }
+  presets = merged;
+  if (!presets.length) {
+    for (const pk of PICKERS) pk.fail(errors.join(" / ") || "0 件");
+    log("プリセット読込失敗: " + errors.join(" / "));
+    return;
+  }
+  for (const pk of PICKERS) pk.render("");
+  for (const pk of PICKERS) await pk.loadSelected();
+  const counts = PRESET_SOURCES.map(s => `${s.form} ${presets.filter(p => p.form === s.form).length}件`).join(" / ");
+  log(`プリセット読込: ${counts}` + (errors.length ? `（一部失敗: ${errors.join(" / ")}）` : ""));
 }
 
-/* 書込元像ピッカー (プリセット / アップロード / 別バスコピー) のファクトリ。
+/* 書込元像ピッカー (プリセット / アップロード) のファクトリ。
  * クローン書込タブと Avago ISP タブで同じ操作感を共有する。
  * ids: 各 DOM 要素の id。onBytes(bytes|null): 選択像が変わるたびに呼ぶ。 */
 function makeSourcePicker(ids, onBytes, opts = {}) {
   const g = id => document.getElementById(id);
   function showPreview(b, label) {
-    const s = sffSummary(b);
-    const c = b.length >= 96 ? calcChecksum(b) : null;
+    const prof = detectProfile(b);
+    const s = prof.summary(b);
     g(ids.preview).innerHTML =
-      `<div style="margin-top:.5rem"><b>${label || "選択中"}</b> — ${b.length} バイト<br>`
-      + `<span class="mono">Vendor: ${s.vendor || "-"} / PN: ${s.pn || "-"} / SN(置換前): ${s.sn || "-"}</span>`
-      + (c ? `<br>${checksumHtml(c)}` : "") + `</div>`;
+      `<div style="margin-top:.5rem"><b>${label || "選択中"}</b> [${prof.name}]<br>`
+      + `<span class="mono">Vendor: ${s.vendor || "-"} / PN: ${s.pn || "-"}</span></div>`;
   }
   /* ベンダー別 optgroup + 検索でプリセット候補を描画。先頭を選び直したら true */
   function render(query) {
@@ -709,9 +878,13 @@ function makeSourcePicker(ids, onBytes, opts = {}) {
       const hay = `${p.name} ${p.vendor||""} ${p.pn||""} ${p.note||""}`.toLowerCase();
       return terms.every(t => hay.includes(t));
     };
+    const allow = opts.formGroup ? opts.formGroup() : null;   // 書込先モジュールで使える form 群
+    const chosen = ids.formSel ? g(ids.formSel).value : "";   // 種別セレクタで選んだ単一 form ("" = すべて)
+    const inForm = p => (!allow || allow.includes(p.form || "SFP")) && (!chosen || (p.form || "SFP") === chosen);
     const groups = new Map();
     const CURATED = "★ 厳選";
     presets.forEach((p, i) => {
+      if (!inForm(p)) return;   // 選択中の書込先モジュール種別以外は除外
       if (!match(p)) return;
       const label = (p.file && !p.file.includes("bin/lib/")) ? CURATED : (p.vendor || "(ベンダー不明)");
       if (!groups.has(label)) groups.set(label, []);
@@ -733,15 +906,21 @@ function makeSourcePicker(ids, onBytes, opts = {}) {
       }
       sel.appendChild(og);
     }
-    g(ids.presetCount).textContent = terms.length ? `${shown} / ${presets.length} 件` : `全 ${presets.length} 件`;
+    const formTotal = presets.reduce((n, p) => n + (inForm(p) ? 1 : 0), 0);
+    g(ids.presetCount).textContent = terms.length ? `${shown} / ${formTotal} 件` : `全 ${formTotal} 件`;
     const stillThere = prev !== "" && [...sel.options].some(o => o.value === prev);
     if (stillThere) { sel.value = prev; return false; }
     if (sel.options.length) { sel.selectedIndex = 0; return true; }   // 要再読込
     return false;
   }
   async function loadSelected() {
-    const i = Number(g(ids.presetSel).value);
-    const p = presets[i];
+    const v = g(ids.presetSel).value;
+    if (v === "") {   // この種別に該当プリセットなし(空)
+      onBytes(null);
+      g(ids.preview).innerHTML = `<span class="hint">この種別のプリセットはありません。アップロードをご利用ください。</span>`;
+      return;
+    }
+    const p = presets[Number(v)];
     if (!p) { onBytes(null); return; }
     try {
       const res = await fetch(p.file, { cache: "no-cache" });
@@ -759,34 +938,33 @@ function makeSourcePicker(ids, onBytes, opts = {}) {
       `<span class="hint">プリセットを読み込めませんでした (${msg})。`
       + `file:// では読込できないため、ローカルではサーバ起動（例 <code>npx serve</code>）か「アップロード」をご利用ください。</span>`;
   }
-  /* 書込元の切替 (プリセット / アップロード / 別バスコピー) */
+  /* 書込元の切替 (プリセット / アップロード) */
   document.querySelectorAll(`input[name=${ids.radioName}]`).forEach(r => r.addEventListener("change", async () => {
     const mode = document.querySelector(`input[name=${ids.radioName}]:checked`).value;
     g(ids.segPreset).classList.toggle("on", mode === "preset");
     g(ids.segUpload).classList.toggle("on", mode === "upload");
-    g(ids.segBus).classList.toggle("on", mode === "bus");
     g(ids.presetRow).style.display = mode === "preset" ? "" : "none";
     g(ids.presetRow2).style.display = mode === "preset" ? "" : "none";
     g(ids.uploadRow).style.display = mode === "upload" ? "" : "none";
-    g(ids.busRow).style.display    = mode === "bus"    ? "" : "none";
     onBytes(null); g(ids.preview).innerHTML = "";
     if (mode === "preset") await loadSelected();
-    if (mode === "bus") g(ids.copySrcBus).value = String(opts.defaultBus ? opts.defaultBus() : 0);
   }));
-  g(ids.copyReadBtn).addEventListener("click", async () => {
-    if (!device) { g(ids.preview).innerHTML = '<span class="hint">未接続です</span>'; return; }
-    try {
-      const sbus = Number(g(ids.copySrcBus).value);
-      g(ids.preview).innerHTML = `<span class="hint">Bus ${sbus} を読み出し中...</span>`;
-      const b = await readBytes(sbus, A0, 0, DUMP_LEN);
-      onBytes(b); showPreview(b, `Bus ${sbus} のコピー (0x50)`);
-      if (opts.afterCopy) opts.afterCopy(sbus, g(ids.preview));
-      log(`COPY元読込: Bus${sbus} 0x50 ${DUMP_LEN}B`);
-    } catch (e) { onBytes(null); g(ids.preview).innerHTML = `<span class="hint">読込失敗: ${e.message}</span>`; }
-  });
+  /* 種別セレクタ(SFP/SFP+/SFP28…)を formGroup の内容で構成。書込先モジュールに連動して再構成する。 */
+  function populateFormSel() {
+    if (!ids.formSel) return;
+    const sel = g(ids.formSel);
+    const allow = opts.formGroup ? opts.formGroup() : ["SFP"];
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">すべて</option>' + allow.map(f => `<option value="${f}">${f}</option>`).join("");
+    sel.value = allow.includes(prev) ? prev : "";   // 群が変わって選択が無効なら「すべて」へ
+  }
   g(ids.presetSel).addEventListener("change", loadSelected);
   g(ids.presetSearch).addEventListener("input", async (e) => {
     if (render(e.target.value)) await loadSelected();   // 先頭を選び直したら bin 再読込
+  });
+  if (ids.formSel) g(ids.formSel).addEventListener("change", async () => {
+    render(g(ids.presetSearch).value);
+    await loadSelected();   // 種別変更で候補が入れ替わるので必ず再読込
   });
   g(ids.fileInput).addEventListener("change", async () => {
     try {
@@ -794,32 +972,39 @@ function makeSourcePicker(ids, onBytes, opts = {}) {
       onBytes(b); showPreview(b, g(ids.fileInput).files[0].name);
     } catch (e) { onBytes(null); g(ids.preview).innerHTML = `<span class="hint">${e.message}</span>`; }
   });
-  return { render, loadSelected, fail };
+  populateFormSel();
+  return { render, loadSelected, fail, populateFormSel };
 }
 
 /* クローン書込タブ: 選択像をグローバル srcBytes に保存 */
 const clonePicker = makeSourcePicker({
-  radioName: "src", segPreset: "segPreset", segUpload: "segUpload", segBus: "segBus",
-  presetRow: "presetRow", presetRow2: "presetRow2", uploadRow: "uploadRow", busRow: "busRow",
-  presetSearch: "presetSearch", presetSel: "presetSel", presetCount: "presetCount",
-  fileInput: "cloneFile", copySrcBus: "copySrcBus", copyReadBtn: "copyReadBtn", preview: "srcPreview",
+  radioName: "src", segPreset: "segPreset", segUpload: "segUpload",
+  presetRow: "presetRow", presetRow2: "presetRow2", uploadRow: "uploadRow",
+  presetSearch: "presetSearch", presetSel: "presetSel", presetCount: "presetCount", formSel: "presetForm",
+  fileInput: "cloneFile", preview: "srcPreview",
 }, b => { srcBytes = b; refreshCloneButtons(); }, {
-  defaultBus: () => selectedBus() === 0 ? 1 : 0,
-  afterCopy: (sbus, prev) => {
-    if (sbus === selectedBus())
-      prev.innerHTML += '<div class="hint" style="color:var(--warn)">⚠️ コピー元と書込先が同一バスです。書込先バスを変更してください。</div>';
-  },
+  formGroup: () => FORM_GROUPS[selectedProfile("clone").type] || FORM_GROUPS.sfp,  // 書込先モジュールで絞る
 });
 
 /* Avago ISP タブ: 選択像を ispSrcBytes に保存（同じ操作感） */
 const ispPicker = makeSourcePicker({
-  radioName: "ispsrc", segPreset: "ispSegPreset", segUpload: "ispSegUpload", segBus: "ispSegBus",
-  presetRow: "ispPresetRow", presetRow2: "ispPresetRow2", uploadRow: "ispUploadRow", busRow: "ispBusRow",
-  presetSearch: "ispPresetSearch", presetSel: "ispPresetSel", presetCount: "ispPresetCount",
-  fileInput: "ispCloneFile", copySrcBus: "ispCopySrcBus", copyReadBtn: "ispCopyReadBtn", preview: "ispSrcPreview",
-}, b => { ispSrcBytes = b; });
+  radioName: "ispsrc", segPreset: "ispSegPreset", segUpload: "ispSegUpload",
+  presetRow: "ispPresetRow", presetRow2: "ispPresetRow2", uploadRow: "ispUploadRow",
+  presetSearch: "ispPresetSearch", presetSel: "ispPresetSel", presetCount: "ispPresetCount", formSel: "ispPresetForm",
+  fileInput: "ispCloneFile", preview: "ispSrcPreview",
+}, b => { ispSrcBytes = b; }, {
+  formGroup: () => FORM_GROUPS.sfp,   // Avago ISP は内部 SFP A0 ページ(128B)専用
+});
 
 const PICKERS = [clonePicker, ispPicker];
+
+/* 書込先モジュール(SFP/QSFP)を切り替えたら、クローン書込タブのライブラリ(プリセット)を絞り直す */
+$("typeClone").addEventListener("change", async () => {
+  $("presetSearch").value = "";
+  clonePicker.populateFormSel();   // 種別セレクタを新しいモジュール群で作り直す
+  clonePicker.render("");
+  await clonePicker.loadSelected();
+});
 
 /* org の SN(68..83) と 製造日(84..91) を base に移植してチェックサム再計算 */
 function mergeSnInto(base, org) {
@@ -853,23 +1038,23 @@ async function cloneToModule(bus, src) {
 $("cloneBtn").addEventListener("click", async () => {
   if (!device || !srcBytes) return;
   try {
-    const bus = selectedBus();
+    const prof = selectedProfile("clone");
     $("cloneOut").textContent = "ダンプ→SN維持→書込中...";
-    const r = await cloneToModule(bus, srcBytes);
+    const r = await prof.clone(prof.bus, srcBytes);
     $("cloneOut").textContent =
-      `クローン完了（実 SN「${r.sn}」維持）\n`
+      `クローン完了（実 SN「${r.sn}」維持 / ${prof.name}）\n`
       + `Vendor: ${r.summary.vendor}  PN: ${r.summary.pn}\n`
-      + `ベリファイ: ${r.diff === 0 ? `全一致 OK (PW=${r.pwUsed})` : r.diff + " バイト不一致"}\n`
+      + `ベリファイ: ${r.diff === 0 ? `全一致 OK${r.pwUsed !== "-" ? ` (PW=${r.pwUsed})` : ""}` : r.diff + " バイト不一致"}\n`
       + `CC_BASE ${r.ck.baseOk ? "OK" : "NG"} / CC_EXT ${r.ck.extOk ? "OK" : "NG"}`;
-    log(`CLONE 完了 SN=${r.sn} diff=${r.diff}`);
+    log(`CLONE 完了 [${prof.name}] SN=${r.sn} diff=${r.diff}`);
   } catch (e) { $("cloneOut").textContent = "エラー: " + e.message; log(e.message); }
 });
 
 /* ---------- 自動連続 (loop.sh) ---------- */
-async function waitForPresence(bus, want) {        // want=true:挿入 / false:抜去
+async function waitForPresence(bus, want, presence) {   // want=true:挿入 / false:抜去
   while (!loopAbort) {
     let present;
-    try { const a = await scan(bus); present = a.includes(A0) && a.includes(A2); }
+    try { present = presence(await scan(bus)); }
     catch { present = false; }
     if (present === want) return true;
     await sleep(400);
@@ -878,24 +1063,25 @@ async function waitForPresence(bus, want) {        // want=true:挿入 / false:�
 }
 $("loopStart").addEventListener("click", async () => {
   if (!device || !srcBytes) return;
-  if (srcBytes.length < 96) { $("loopOut").textContent = "書込元は 96 バイト以上必要です"; return; }
+  const prof = selectedProfile("clone");
+  if (srcBytes.length < prof.minSrc) { $("loopOut").textContent = `書込元は ${prof.minSrc} バイト以上必要です`; return; }
   loopAbort = false; loopRunning = true;
   $("loopStart").disabled = true; $("loopStop").disabled = false; $("cloneBtn").disabled = true;
   $("loopState").textContent = "実行中"; $("loopState").className = "pill ok";
-  const bus = selectedBus();
+  const bus = prof.bus;
   let count = 0;
   try {
     while (!loopAbort) {
       $("loopOut").textContent = `#${count + 1} モジュール挿入待ち...`;
-      if (!await waitForPresence(bus, true)) break;
+      if (!await waitForPresence(bus, true, prof.presence)) break;
       $("loopOut").textContent = "検出。実SN維持で書込中...";
-      const r = await cloneToModule(bus, srcBytes);
+      const r = await prof.clone(bus, srcBytes);
       count++;
       $("loopOut").textContent =
         `#${count} 書込完了 SN=${r.sn}  ベリファイ:${r.diff === 0 ? "OK" : r.diff + "B不一致"}\n`
         + `モジュールを差し替えてください(抜去待ち)...`;
       log(`LOOP #${count} SN=${r.sn} diff=${r.diff} PW=${r.pwUsed}`);
-      if (!await waitForPresence(bus, false)) break;
+      if (!await waitForPresence(bus, false, prof.presence)) break;
     }
   } catch (e) { $("loopOut").textContent = "エラー: " + e.message; log(e.message); }
   finally {
@@ -1220,5 +1406,6 @@ if (!("hid" in navigator)) {
   $("connect").disabled = true;
 }
 </script>
-</body>
-</html>
+
+
+</body></html>

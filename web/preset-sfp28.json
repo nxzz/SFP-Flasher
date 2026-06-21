@@ -1,0 +1,14 @@
+{
+  "_comment": "SFP28(25G・SFF-8472 拡張BR)書込用プリセット EEPROM。file は preset-sfp28.json からの相対パス。実 SN は書込時に自動維持。",
+  "_form": "このファイルのエントリは UI の SFP28 トグルで表示されます（form 読込時に自動付与=SFP28）。",
+  "presets": [
+    {
+      "name": "FS S28-PC02 rev01",
+      "file": "bin/lib/FS_S28-PC02.bin",
+      "vendor": "FS",
+      "pn": "S28-PC02",
+      "note": "25G DAC 2m",
+      "src": "freetimedb #1720894481"
+    }
+  ]
+}

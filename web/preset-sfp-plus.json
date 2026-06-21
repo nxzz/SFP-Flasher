@@ -1,0 +1,947 @@
+{
+  "_comment": "SFP+(8G/10G/16G FC・10GBASE 等)書込用プリセット EEPROM。file は preset-sfp-plus.json からの相対パス。実 SN は書込時に自動維持。",
+  "_form": "このファイルのエントリは UI の SFP+ トグルで表示されます（form 読込時に自動付与=SFP+）。",
+  "presets": [
+    {
+      "name": "Finisar FTLX8571D3BCL (10G SR)",
+      "file": "bin/FTLX8571D3BCL.bin",
+      "vendor": "FINISAR CORP.",
+      "pn": "FTLX8571D3BCL",
+      "note": "10G 850nm SR"
+    },
+    {
+      "name": "Finisar 10G (fin-10G)",
+      "file": "bin/fin-10G.bin",
+      "vendor": "FINISAR CORP.",
+      "pn": "FTLX8571D3BCL",
+      "note": "10G 850nm"
+    },
+    {
+      "name": "Allied Telesis Stack (FTLX8571 改)",
+      "file": "bin/FTLX8571D3BCL-AT-ScackMod.bin",
+      "vendor": "AT",
+      "pn": "AT-Stack0.3",
+      "note": "AT StackMod"
+    },
+    {
+      "name": "Brocade 57-0000075-01",
+      "file": "bin/Brocade-57-0000075-01.bin",
+      "vendor": "BROCADE",
+      "pn": "57-0000075-01",
+      "note": "10G 850nm"
+    },
+    {
+      "name": "Cisco 8G FC (Finisar)",
+      "file": "bin/cisco-8GFC.bin",
+      "vendor": "CISCO-FINISAR",
+      "pn": "FTLF8528P3BCV-CS",
+      "note": "8G FC 850nm"
+    },
+    {
+      "name": "Cisco SFP-H10GB-CU3M (DAC)",
+      "file": "bin/SFP-H10GB-CU3M.bin",
+      "vendor": "CISCO-MOLEX",
+      "pn": "74752-9520",
+      "note": "10G DAC 3m"
+    },
+    {
+      "name": "Cisco SFP10G-MFCT-80-C",
+      "file": "bin/SFP10G-MFCT-80-C.bin",
+      "vendor": "CISCO-PRE",
+      "pn": "SFP10G-MFCT-80-C",
+      "note": "10G 80km"
+    },
+    {
+      "name": "FS SFP-10GSR-85",
+      "file": "bin/fs-10G.bin",
+      "vendor": "FS",
+      "pn": "SFP-10GSR-85",
+      "note": "10G 850nm SR"
+    },
+    {
+      "name": "FiberJP 10GBX23-10 (1270tx/1330rx)",
+      "file": "bin/SFP-10GBX23-10-1330tx.bin",
+      "vendor": "FiberJP",
+      "pn": "SFP-10GBX23-10",
+      "note": "10G BiDi 1270↑"
+    },
+    {
+      "name": "AT 10GBX23-10 Stack 改",
+      "file": "bin/SFP-10GBX23-10-AT-StackMod.bin",
+      "vendor": "AT",
+      "pn": "ATP-10GBX23-10",
+      "note": "BiDi StackMod"
+    },
+    {
+      "name": "FiberJP 10GBX32-10 (1330tx/1270rx)",
+      "file": "bin/SFP-10GBX32-10-2-1270tx.bin",
+      "vendor": "FiberJP",
+      "pn": "SFP-10GBX32-10",
+      "note": "10G BiDi 1330↑"
+    },
+    {
+      "name": "Amphenol 603830003 revH",
+      "file": "bin/lib/Amphenol_603830003.bin",
+      "vendor": "Amphenol",
+      "pn": "603830003",
+      "note": "10G DAC 3m",
+      "src": "freetimedb #2811099119"
+    },
+    {
+      "name": "Amphenol 603830003 revL",
+      "file": "bin/lib/Amphenol_603830003-dfee.bin",
+      "vendor": "Amphenol",
+      "pn": "603830003",
+      "note": "10G DAC 3m",
+      "src": "freetimedb #4175569547"
+    },
+    {
+      "name": "Amphenol 616740001 revC",
+      "file": "bin/lib/Amphenol_616740001.bin",
+      "vendor": "Amphenol",
+      "pn": "616740001",
+      "note": "10G DAC 1m",
+      "src": "freetimedb #687273293"
+    },
+    {
+      "name": "Arista Networks CAB-SFP-SFP-3M rev0002",
+      "file": "bin/lib/Arista-Networks_CAB-SFP-SFP-3M.bin",
+      "vendor": "Arista Networks",
+      "pn": "CAB-SFP-SFP-3M",
+      "note": "10G DAC 3m",
+      "src": "freetimedb #2675493800"
+    },
+    {
+      "name": "Arista Networks CAB-SFP-SFP-5M rev0002",
+      "file": "bin/lib/Arista-Networks_CAB-SFP-SFP-5M.bin",
+      "vendor": "Arista Networks",
+      "pn": "CAB-SFP-SFP-5M",
+      "note": "10G DAC 5m",
+      "src": "freetimedb #3510295340"
+    },
+    {
+      "name": "Arista Networks SFP-10G-LR rev0002",
+      "file": "bin/lib/Arista-Networks_SFP-10G-LR.bin",
+      "vendor": "Arista Networks",
+      "pn": "SFP-10G-LR",
+      "note": "10G LR 1310nm 10km",
+      "src": "freetimedb #1453086878"
+    },
+    {
+      "name": "Arista Networks SFP-10G-LR rev0002",
+      "file": "bin/lib/Arista-Networks_SFP-10G-LR-708c.bin",
+      "vendor": "Arista Networks",
+      "pn": "SFP-10G-LR",
+      "note": "10G LR 1310nm 10km",
+      "src": "freetimedb #1839104615"
+    },
+    {
+      "name": "Arista Networks SFP-10G-SR rev0002",
+      "file": "bin/lib/Arista-Networks_SFP-10G-SR.bin",
+      "vendor": "Arista Networks",
+      "pn": "SFP-10G-SR",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #2649159926"
+    },
+    {
+      "name": "Arista Networks SK-DA-SP10-2M revA",
+      "file": "bin/lib/Arista-Networks_SK-DA-SP10-2M.bin",
+      "vendor": "Arista Networks",
+      "pn": "SK-DA-SP10-2M",
+      "note": "10G DAC 2m",
+      "src": "freetimedb #1181706061"
+    },
+    {
+      "name": "AVAGO AFBR-2CAR20Z",
+      "file": "bin/lib/AVAGO_AFBR-2CAR20Z.bin",
+      "vendor": "AVAGO",
+      "pn": "AFBR-2CAR20Z",
+      "note": "10G AOC 20m",
+      "src": "freetimedb #3891992020"
+    },
+    {
+      "name": "Blade Network BN-CKM-SP-LR revG2.3",
+      "file": "bin/lib/Blade-Network_BN-CKM-SP-LR.bin",
+      "vendor": "Blade Network",
+      "pn": "BN-CKM-SP-LR",
+      "note": "10G LR 1270nm 20km",
+      "src": "freetimedb #3459123393"
+    },
+    {
+      "name": "Blade Network BN-CKM-SP-LR revG2.3",
+      "file": "bin/lib/Blade-Network_BN-CKM-SP-LR-c026.bin",
+      "vendor": "Blade Network",
+      "pn": "BN-CKM-SP-LR",
+      "note": "10G LR 1310nm 20km",
+      "src": "freetimedb #4172806379"
+    },
+    {
+      "name": "Blade Network BN-CKM-SP-SR revG2.3",
+      "file": "bin/lib/Blade-Network_BN-CKM-SP-SR.bin",
+      "vendor": "Blade Network",
+      "pn": "BN-CKM-SP-SR",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #2995578874"
+    },
+    {
+      "name": "Blade Network SFP-10G-LR+-SO rev01",
+      "file": "bin/lib/Blade-Network_SFP-10G-LR-SO.bin",
+      "vendor": "Blade Network",
+      "pn": "SFP-10G-LR+-SO",
+      "note": "10G LR 1310nm 10km",
+      "src": "freetimedb #3976572822"
+    },
+    {
+      "name": "BROCADE 57-1000012-01 revA",
+      "file": "bin/lib/BROCADE_57-1000012-01.bin",
+      "vendor": "BROCADE",
+      "pn": "57-1000012-01",
+      "note": "8GFC SW 850nm 150m",
+      "src": "freetimedb #3931149215"
+    },
+    {
+      "name": "BROCADE 57-1000012-01 revA",
+      "file": "bin/lib/BROCADE_57-1000012-01-4336.bin",
+      "vendor": "BROCADE",
+      "pn": "57-1000012-01",
+      "note": "8GFC SW 850nm 150m",
+      "src": "freetimedb #403960280"
+    },
+    {
+      "name": "BROCADE 58-1000027-01 revA",
+      "file": "bin/lib/BROCADE_58-1000027-01.bin",
+      "vendor": "BROCADE",
+      "pn": "58-1000027-01",
+      "note": "10G AOC 3m",
+      "src": "freetimedb #3036749206"
+    },
+    {
+      "name": "Cable Matters 104033-2m-US rev03",
+      "file": "bin/lib/Cable-Matters_104033-2m-US.bin",
+      "vendor": "Cable Matters",
+      "pn": "104033-2m-US",
+      "note": "10G DAC 2m",
+      "src": "freetimedb #1514497452"
+    },
+    {
+      "name": "CISCO-FINISAR FTLX1471D3BCL-CS revA",
+      "file": "bin/lib/CISCO-FINISAR_FTLX1471D3BCL-CS.bin",
+      "vendor": "CISCO-FINISAR",
+      "pn": "FTLX1471D3BCL-CS",
+      "note": "10G LR 1310nm 10km",
+      "src": "freetimedb #990170821"
+    },
+    {
+      "name": "CISCO-FINISAR FTLX1474D3BCL-CS revA",
+      "file": "bin/lib/CISCO-FINISAR_FTLX1474D3BCL-CS.bin",
+      "vendor": "CISCO-FINISAR",
+      "pn": "FTLX1474D3BCL-CS",
+      "note": "10G LR 1310nm 10km",
+      "src": "freetimedb #2991461303"
+    },
+    {
+      "name": "CISCO-FINISAR FTLX8570D3BCL-C2 revA",
+      "file": "bin/lib/CISCO-FINISAR_FTLX8570D3BCL-C2.bin",
+      "vendor": "CISCO-FINISAR",
+      "pn": "FTLX8570D3BCL-C2",
+      "note": "10G 850nm 100m",
+      "src": "freetimedb #1272309350"
+    },
+    {
+      "name": "CISCO-FINISAR FTLX8571D3BCL-C2 revA",
+      "file": "bin/lib/CISCO-FINISAR_FTLX8571D3BCL-C2.bin",
+      "vendor": "CISCO-FINISAR",
+      "pn": "FTLX8571D3BCL-C2",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #1712683971"
+    },
+    {
+      "name": "CISCO-JDSU PLRXPL-VC-S43-CG revB",
+      "file": "bin/lib/CISCO-JDSU_PLRXPL-VC-S43-CG.bin",
+      "vendor": "CISCO-JDSU",
+      "pn": "PLRXPL-VC-S43-CG",
+      "note": "10G 850nm 100m",
+      "src": "freetimedb #3068694902"
+    },
+    {
+      "name": "CISCO-LUMENTUM PLRXPL-SC-S43-CS rev3",
+      "file": "bin/lib/CISCO-LUMENTUM_PLRXPL-SC-S43-CS.bin",
+      "vendor": "CISCO-LUMENTUM",
+      "pn": "PLRXPL-SC-S43-CS",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #3100295933"
+    },
+    {
+      "name": "CISCO-MOLEX 74752-9045 rev07",
+      "file": "bin/lib/CISCO-MOLEX_74752-9045.bin",
+      "vendor": "CISCO-MOLEX",
+      "pn": "74752-9045",
+      "note": "10G DAC 3m",
+      "src": "freetimedb #745722961"
+    },
+    {
+      "name": "CISCO-MOLEX 74752-9047 rev07",
+      "file": "bin/lib/CISCO-MOLEX_74752-9047.bin",
+      "vendor": "CISCO-MOLEX",
+      "pn": "74752-9047",
+      "note": "10G DAC 5m",
+      "src": "freetimedb #2884682522"
+    },
+    {
+      "name": "CISCO-TYCO 1-2053783-2 revP",
+      "file": "bin/lib/CISCO-TYCO_1-2053783-2.bin",
+      "vendor": "CISCO-TYCO",
+      "pn": "1-2053783-2",
+      "note": "10G DAC 3m",
+      "src": "freetimedb #3602751676"
+    },
+    {
+      "name": "FANG HANG FH-DP1T30SS01 revR",
+      "file": "bin/lib/FANG-HANG_FH-DP1T30SS01.bin",
+      "vendor": "FANG HANG",
+      "pn": "FH-DP1T30SS01",
+      "note": "10G DAC 1m",
+      "src": "freetimedb #4240001809"
+    },
+    {
+      "name": "FiberHome 5044002-008-C rev00",
+      "file": "bin/lib/FiberHome_5044002-008-C.bin",
+      "vendor": "FiberHome",
+      "pn": "5044002-008-C",
+      "note": "10G LR 1270nm 20km",
+      "src": "freetimedb #2351335881"
+    },
+    {
+      "name": "FiberHome 5044002-009 rev00",
+      "file": "bin/lib/FiberHome_5044002-009.bin",
+      "vendor": "FiberHome",
+      "pn": "5044002-009",
+      "note": "10G LR 1330nm 20km",
+      "src": "freetimedb #3894036039"
+    },
+    {
+      "name": "FiberTrade FT-SFP+-WDM-EZR- revA",
+      "file": "bin/lib/FiberTrade_FT-SFP-WDM-EZR.bin",
+      "vendor": "FiberTrade",
+      "pn": "FT-SFP+-WDM-EZR-",
+      "note": "10G 1550nm 80km",
+      "src": "freetimedb #3197642537"
+    },
+    {
+      "name": "FIBERXON INC. FTM-811XC-L03DG rev10",
+      "file": "bin/lib/FIBERXON-INC_FTM-811XC-L03DG.bin",
+      "vendor": "FIBERXON INC.",
+      "pn": "FTM-811XC-L03DG",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #1705471586"
+    },
+    {
+      "name": "FIBO FT-S10-X3120LD revA",
+      "file": "bin/lib/FIBO_FT-S10-X3120LD.bin",
+      "vendor": "FIBO",
+      "pn": "FT-S10-X3120LD",
+      "note": "10G LR 1310nm 20km",
+      "src": "freetimedb #1273403041"
+    },
+    {
+      "name": "FINISAR CORP. FTLF8528P2BCV-IL revA",
+      "file": "bin/lib/FINISAR-CORP_FTLF8528P2BCV-IL.bin",
+      "vendor": "FINISAR CORP.",
+      "pn": "FTLF8528P2BCV-IL",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #2916245067"
+    },
+    {
+      "name": "FINISAR CORP. FTLX1471D3BCL-FC revA",
+      "file": "bin/lib/FINISAR-CORP_FTLX1471D3BCL-FC.bin",
+      "vendor": "FINISAR CORP.",
+      "pn": "FTLX1471D3BCL-FC",
+      "note": "10G LR 1310nm 10km",
+      "src": "freetimedb #2459837521"
+    },
+    {
+      "name": "FINISAR CORP. FTLX1471D3BCL-HP revA",
+      "file": "bin/lib/FINISAR-CORP_FTLX1471D3BCL-HP.bin",
+      "vendor": "FINISAR CORP.",
+      "pn": "FTLX1471D3BCL-HP",
+      "note": "10G LR 1310nm 10km",
+      "src": "freetimedb #1464599852"
+    },
+    {
+      "name": "FINISAR CORP. FTLX8571D3BCL-HD revA",
+      "file": "bin/lib/FINISAR-CORP_FTLX8571D3BCL-HD.bin",
+      "vendor": "FINISAR CORP.",
+      "pn": "FTLX8571D3BCL-HD",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #2835717920"
+    },
+    {
+      "name": "FINISAR CORP. FTLX8571D3BCL-HZ revA",
+      "file": "bin/lib/FINISAR-CORP_FTLX8571D3BCL-HZ.bin",
+      "vendor": "FINISAR CORP.",
+      "pn": "FTLX8571D3BCL-HZ",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #3170629471"
+    },
+    {
+      "name": "FINISAR CORP. FTLX8571D3BCLHW2 revA",
+      "file": "bin/lib/FINISAR-CORP_FTLX8571D3BCLHW2.bin",
+      "vendor": "FINISAR CORP.",
+      "pn": "FTLX8571D3BCLHW2",
+      "note": "10G SR 850nm 100m",
+      "src": "freetimedb #369172415"
+    },
+    {
+      "name": "FINISAR CORP. FTLX8571D3BNL-E5 revB",
+      "file": "bin/lib/FINISAR-CORP_FTLX8571D3BNL-E5.bin",
+      "vendor": "FINISAR CORP.",
+      "pn": "FTLX8571D3BNL-E5",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #2343048344"
+    },
+    {
+      "name": "FINISAR CORP. FTRJ8519P1BNL-B1 revA",
+      "file": "bin/lib/FINISAR-CORP_FTRJ8519P1BNL-B1.bin",
+      "vendor": "FINISAR CORP.",
+      "pn": "FTRJ8519P1BNL-B1",
+      "note": "10G LR 850nm 32km",
+      "src": "freetimedb #756006175"
+    },
+    {
+      "name": "FORTINET FTLX8574D3BCLFTN revA",
+      "file": "bin/lib/FORTINET_FTLX8574D3BCLFTN.bin",
+      "vendor": "FORTINET",
+      "pn": "FTLX8574D3BCLFTN",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #1459961105"
+    },
+    {
+      "name": "FS SFP-10GSR-85",
+      "file": "bin/lib/FS_SFP-10GSR-85.bin",
+      "vendor": "FS",
+      "pn": "SFP-10GSR-85",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #1764382347"
+    },
+    {
+      "name": "Gigalight GBP-2733192-L2C revA",
+      "file": "bin/lib/Gigalight_GBP-2733192-L2C.bin",
+      "vendor": "Gigalight",
+      "pn": "GBP-2733192-L2C",
+      "note": "10G LR 1270nm 20km",
+      "src": "freetimedb #2157200756"
+    },
+    {
+      "name": "Gigalight GBP-3327192-L2C revA",
+      "file": "bin/lib/Gigalight_GBP-3327192-L2C.bin",
+      "vendor": "Gigalight",
+      "pn": "GBP-3327192-L2C",
+      "note": "10G LR 1330nm 20km",
+      "src": "freetimedb #1581074787"
+    },
+    {
+      "name": "Gigalight MT-DP-57192-L4CD rev1.1",
+      "file": "bin/lib/Gigalight_MT-DP-57192-L4CD.bin",
+      "vendor": "Gigalight",
+      "pn": "MT-DP-57192-L4CD",
+      "note": "10G ER 1531nm 40km",
+      "src": "freetimedb #297075452"
+    },
+    {
+      "name": "HP-A BROCADE AJ716A revA",
+      "file": "bin/lib/HP-A-BROCADE_AJ716A.bin",
+      "vendor": "HP-A BROCADE",
+      "pn": "AJ716A",
+      "note": "8GFC SW 850nm 150m",
+      "src": "freetimedb #1300873926"
+    },
+    {
+      "name": "HP-F AJ718A revA",
+      "file": "bin/lib/HP-F_AJ718A.bin",
+      "vendor": "HP-F",
+      "pn": "AJ718A",
+      "note": "8GFC SW 850nm 150m",
+      "src": "freetimedb #1454363368"
+    },
+    {
+      "name": "HP-F BROCADE AJ716A revA",
+      "file": "bin/lib/HP-F-BROCADE_AJ716A.bin",
+      "vendor": "HP-F BROCADE",
+      "pn": "AJ716A",
+      "note": "8GFC SW 850nm 150m",
+      "src": "freetimedb #141526512"
+    },
+    {
+      "name": "HP-F BROCADE AJ716A revA",
+      "file": "bin/lib/HP-F-BROCADE_AJ716A-1e68.bin",
+      "vendor": "HP-F BROCADE",
+      "pn": "AJ716A",
+      "note": "10G LR 1270nm 20km",
+      "src": "freetimedb #1905172208"
+    },
+    {
+      "name": "HP-F BROCADE AJ716A revA",
+      "file": "bin/lib/HP-F-BROCADE_AJ716A-4db7.bin",
+      "vendor": "HP-F BROCADE",
+      "pn": "AJ716A",
+      "note": "10G LR 1270nm 20km",
+      "src": "freetimedb #2926828703"
+    },
+    {
+      "name": "HP-F BROCADE AJ716A revA",
+      "file": "bin/lib/HP-F-BROCADE_AJ716A-9c67.bin",
+      "vendor": "HP-F BROCADE",
+      "pn": "AJ716A",
+      "note": "8GFC SW 1550nm 150m",
+      "src": "freetimedb #3517424720"
+    },
+    {
+      "name": "HUAWEI HPSP2120",
+      "file": "bin/lib/HUAWEI_HPSP2120.bin",
+      "vendor": "HUAWEI",
+      "pn": "HPSP2120",
+      "note": "10G LR 1310nm 20km",
+      "src": "freetimedb #2276370447"
+    },
+    {
+      "name": "HUAWEI HPSP2120",
+      "file": "bin/lib/HUAWEI_HPSP2120-e986.bin",
+      "vendor": "HUAWEI",
+      "pn": "HPSP2120",
+      "note": "10G LR 1310nm 20km",
+      "src": "freetimedb #3921682801"
+    },
+    {
+      "name": "Intel Corp 821-24-031-02 revN",
+      "file": "bin/lib/Intel-Corp_821-24-031-02.bin",
+      "vendor": "Intel Corp",
+      "pn": "821-24-031-02",
+      "note": "10G DAC 3m",
+      "src": "freetimedb #595947045"
+    },
+    {
+      "name": "Intel Corp AFBR-703SDZ-IN2 revG2.3",
+      "file": "bin/lib/Intel-Corp_AFBR-703SDZ-IN2.bin",
+      "vendor": "Intel Corp",
+      "pn": "AFBR-703SDZ-IN2",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #535796110"
+    },
+    {
+      "name": "Intel Corp FTLX1471D3BCV-IT revA",
+      "file": "bin/lib/Intel-Corp_FTLX1471D3BCV-IT.bin",
+      "vendor": "Intel Corp",
+      "pn": "FTLX1471D3BCV-IT",
+      "note": "10G LR 1310nm 10km",
+      "src": "freetimedb #1836547004"
+    },
+    {
+      "name": "Intel Corp FTLX8571D3BCV-I3 revA",
+      "file": "bin/lib/Intel-Corp_FTLX8571D3BCV-I3.bin",
+      "vendor": "Intel Corp",
+      "pn": "FTLX8571D3BCV-I3",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #3087077760"
+    },
+    {
+      "name": "Intel Corp FTLX8571D3BCV-IT revA",
+      "file": "bin/lib/Intel-Corp_FTLX8571D3BCV-IT.bin",
+      "vendor": "Intel Corp",
+      "pn": "FTLX8571D3BCV-IT",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #1669938955"
+    },
+    {
+      "name": "Intel Corp. SFP+-SR revA",
+      "file": "bin/lib/Intel-Corp_SFP-SR.bin",
+      "vendor": "Intel Corp.",
+      "pn": "SFP+-SR",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #3381453704"
+    },
+    {
+      "name": "JDSU PLRXPL-SC-S43C1 rev1",
+      "file": "bin/lib/JDSU_PLRXPL-SC-S43C1.bin",
+      "vendor": "JDSU",
+      "pn": "PLRXPL-SC-S43C1",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #351237972"
+    },
+    {
+      "name": "MergeOptics GmbH TRX10GDL0610CA02 revC3",
+      "file": "bin/lib/MergeOptics-GmbH_TRX10GDL0610CA02.bin",
+      "vendor": "MergeOptics GmbH",
+      "pn": "TRX10GDL0610CA02",
+      "note": "10G LRM 1310nm 220m",
+      "src": "freetimedb #2023352026"
+    },
+    {
+      "name": "MergeOptics GmbH TRX10GVP2010CA01 revB02",
+      "file": "bin/lib/MergeOptics-GmbH_TRX10GVP2010CA01.bin",
+      "vendor": "MergeOptics GmbH",
+      "pn": "TRX10GVP2010CA01",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #2681540707"
+    },
+    {
+      "name": "MikroTik S+DA0001 revD",
+      "file": "bin/lib/MikroTik_S-DA0001.bin",
+      "vendor": "MikroTik",
+      "pn": "S+DA0001",
+      "note": "10G AOC 7m",
+      "src": "freetimedb #3231925362"
+    },
+    {
+      "name": "Modultech 10GB-SFP-CW49 rev1.0",
+      "file": "bin/lib/Modultech_10GB-SFP-CW49.bin",
+      "vendor": "Modultech",
+      "pn": "10GB-SFP-CW49",
+      "note": "10G LR 1490nm 80km",
+      "src": "freetimedb #2026370732"
+    },
+    {
+      "name": "Modultech MT-BP-23192-L2CD revA",
+      "file": "bin/lib/Modultech_MT-BP-23192-L2CD.bin",
+      "vendor": "Modultech",
+      "pn": "MT-BP-23192-L2CD",
+      "note": "10G LR 1270nm 20km",
+      "src": "freetimedb #1336822586"
+    },
+    {
+      "name": "Modultech MT-BP-32192-L2CD rev1.0",
+      "file": "bin/lib/Modultech_MT-BP-32192-L2CD.bin",
+      "vendor": "Modultech",
+      "pn": "MT-BP-32192-L2CD",
+      "note": "10G LR 1330nm 20km",
+      "src": "freetimedb #2283766459"
+    },
+    {
+      "name": "Modultech MT-PP-85192-SR rev1.0",
+      "file": "bin/lib/Modultech_MT-PP-85192-SR.bin",
+      "vendor": "Modultech",
+      "pn": "MT-PP-85192-SR",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #3622513350"
+    },
+    {
+      "name": "Molex Inc. 74752-9056 revC",
+      "file": "bin/lib/Molex-Inc_74752-9056.bin",
+      "vendor": "Molex Inc.",
+      "pn": "74752-9056",
+      "note": "10G",
+      "src": "freetimedb #236342245"
+    },
+    {
+      "name": "OEM 10G SFP cable revN",
+      "file": "bin/lib/OEM_10G-SFP-cable.bin",
+      "vendor": "OEM",
+      "pn": "10G SFP cable",
+      "note": "10G DAC 1m",
+      "src": "freetimedb #2143436337"
+    },
+    {
+      "name": "OEM 10GB-SFP-U27-JN rev1.0",
+      "file": "bin/lib/OEM_10GB-SFP-U27-JN.bin",
+      "vendor": "OEM",
+      "pn": "10GB-SFP-U27-JN",
+      "note": "10G LR 1270nm 40km",
+      "src": "freetimedb #1465769525"
+    },
+    {
+      "name": "OEM 584990002 revA",
+      "file": "bin/lib/OEM_584990002.bin",
+      "vendor": "OEM",
+      "pn": "584990002",
+      "note": "10G DAC 3m",
+      "src": "freetimedb #2426582899"
+    },
+    {
+      "name": "OEM APSPB23B33CDL40 rev0011",
+      "file": "bin/lib/OEM_APSPB23B33CDL40.bin",
+      "vendor": "OEM",
+      "pn": "APSPB23B33CDL40",
+      "note": "10G ER 1270nm 40km",
+      "src": "freetimedb #1577060102"
+    },
+    {
+      "name": "OEM GLOTST08LC2-1310 revA",
+      "file": "bin/lib/OEM_GLOTST08LC2-1310.bin",
+      "vendor": "OEM",
+      "pn": "GLOTST08LC2-1310",
+      "note": "10G LR 1310nm 10km",
+      "src": "freetimedb #649166183"
+    },
+    {
+      "name": "OEM GR-SP10-W2740L-D revA",
+      "file": "bin/lib/OEM_GR-SP10-W2740L-D.bin",
+      "vendor": "OEM",
+      "pn": "GR-SP10-W2740L-D",
+      "note": "10G ER 1270nm 40km",
+      "src": "freetimedb #2313386388"
+    },
+    {
+      "name": "OEM JD094B revA0",
+      "file": "bin/lib/OEM_JD094B.bin",
+      "vendor": "OEM",
+      "pn": "JD094B",
+      "note": "10G LR 1310nm 10km",
+      "src": "freetimedb #1943877211"
+    },
+    {
+      "name": "OEM JD094B-40-1310 revA",
+      "file": "bin/lib/OEM_JD094B-40-1310.bin",
+      "vendor": "OEM",
+      "pn": "JD094B-40-1310",
+      "note": "10G LR 1310nm 40km",
+      "src": "freetimedb #2300771858"
+    },
+    {
+      "name": "OEM JD094B-40-1350 revA",
+      "file": "bin/lib/OEM_JD094B-40-1350.bin",
+      "vendor": "OEM",
+      "pn": "JD094B-40-1350",
+      "note": "10G LR 1350nm 40km",
+      "src": "freetimedb #1483673264"
+    },
+    {
+      "name": "OEM JD094B-40-1390 revA",
+      "file": "bin/lib/OEM_JD094B-40-1390.bin",
+      "vendor": "OEM",
+      "pn": "JD094B-40-1390",
+      "note": "10G LR 1390nm 40km",
+      "src": "freetimedb #1117843300"
+    },
+    {
+      "name": "OEM JD094B-40-1610",
+      "file": "bin/lib/OEM_JD094B-40-1610.bin",
+      "vendor": "OEM",
+      "pn": "JD094B-40-1610",
+      "note": "10G LR 1610nm 40km",
+      "src": "freetimedb #1827480982"
+    },
+    {
+      "name": "OEM NV-BP-32192-L2CD revV04",
+      "file": "bin/lib/OEM_NV-BP-32192-L2CD.bin",
+      "vendor": "OEM",
+      "pn": "NV-BP-32192-L2CD",
+      "note": "10G LR 1330nm 20km",
+      "src": "freetimedb #2355343605"
+    },
+    {
+      "name": "OEM NV-PP-31192-LRC revV04",
+      "file": "bin/lib/OEM_NV-PP-31192-LRC.bin",
+      "vendor": "OEM",
+      "pn": "NV-PP-31192-LRC",
+      "note": "10G LR 1310nm 10km",
+      "src": "freetimedb #2803163984"
+    },
+    {
+      "name": "OEM OP-MCP849L1SD-70",
+      "file": "bin/lib/OEM_OP-MCP849L1SD-70.bin",
+      "vendor": "OEM",
+      "pn": "OP-MCP849L1SD-70",
+      "note": "10G ER 1490nm 70km",
+      "src": "freetimedb #691390106"
+    },
+    {
+      "name": "OEM S>SFPP-MM-03-85- revA",
+      "file": "bin/lib/OEM_S-SFPP-MM-03-85.bin",
+      "vendor": "OEM",
+      "pn": "S>SFPP-MM-03-85-",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #98289119"
+    },
+    {
+      "name": "OEM SFP-10G-D80-T rev1.0",
+      "file": "bin/lib/OEM_SFP-10G-D80-T.bin",
+      "vendor": "OEM",
+      "pn": "SFP-10G-D80-T",
+      "note": "10G ER 80km",
+      "src": "freetimedb #3785234195"
+    },
+    {
+      "name": "OEM SFP-10G-ER revB",
+      "file": "bin/lib/OEM_SFP-10G-ER.bin",
+      "vendor": "OEM",
+      "pn": "SFP-10G-ER",
+      "note": "10G ER 1550nm 40km",
+      "src": "freetimedb #3998075452"
+    },
+    {
+      "name": "OEM SFP-10G-LR rev1.0",
+      "file": "bin/lib/OEM_SFP-10G-LR.bin",
+      "vendor": "OEM",
+      "pn": "SFP-10G-LR",
+      "note": "10G LR 1310nm 10km",
+      "src": "freetimedb #2409725339"
+    },
+    {
+      "name": "OEM SFP-10G-LR revB",
+      "file": "bin/lib/OEM_SFP-10G-LR-4e5e.bin",
+      "vendor": "OEM",
+      "pn": "SFP-10G-LR",
+      "note": "10G LR 1310nm 10km",
+      "src": "freetimedb #2924245786"
+    },
+    {
+      "name": "OEM SFP-10G-SR-EO revA",
+      "file": "bin/lib/OEM_SFP-10G-SR-EO.bin",
+      "vendor": "OEM",
+      "pn": "SFP-10G-SR-EO",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #619540915"
+    },
+    {
+      "name": "OEM SFP-10G23-60D revA",
+      "file": "bin/lib/OEM_SFP-10G23-60D.bin",
+      "vendor": "OEM",
+      "pn": "SFP-10G23-60D",
+      "note": "10G LR 1270nm 60km",
+      "src": "freetimedb #8600513"
+    },
+    {
+      "name": "OEM SFP-H10GB-CU1M",
+      "file": "bin/lib/OEM_SFP-H10GB-CU1M.bin",
+      "vendor": "OEM",
+      "pn": "SFP-H10GB-CU1M",
+      "note": "10G DAC 1m",
+      "src": "freetimedb #3335556897"
+    },
+    {
+      "name": "OEM SFP-H10GB-CU1M revR",
+      "file": "bin/lib/OEM_SFP-H10GB-CU1M-11f6.bin",
+      "vendor": "OEM",
+      "pn": "SFP-H10GB-CU1M",
+      "note": "10G DAC 1m",
+      "src": "freetimedb #3498734120"
+    },
+    {
+      "name": "OEM SFP+ BIDI-20 revA",
+      "file": "bin/lib/OEM_SFP-BIDI-20.bin",
+      "vendor": "OEM",
+      "pn": "SFP+ BIDI-20",
+      "note": "10G LR 1270nm 20km",
+      "src": "freetimedb #2154996616"
+    },
+    {
+      "name": "OEM SFP+ BIDI-20 revA",
+      "file": "bin/lib/OEM_SFP-BIDI-20-83be.bin",
+      "vendor": "OEM",
+      "pn": "SFP+ BIDI-20",
+      "note": "10G LR 1270nm 20km",
+      "src": "freetimedb #2998684849"
+    },
+    {
+      "name": "OEM SFP+ BIDI-20 revA",
+      "file": "bin/lib/OEM_SFP-BIDI-20-8984.bin",
+      "vendor": "OEM",
+      "pn": "SFP+ BIDI-20",
+      "note": "10G LR 1330nm 20km",
+      "src": "freetimedb #342007145"
+    },
+    {
+      "name": "OEM SFP+ LR revA",
+      "file": "bin/lib/OEM_SFP-LR.bin",
+      "vendor": "OEM",
+      "pn": "SFP+ LR",
+      "note": "10G LR 1310nm 20km",
+      "src": "freetimedb #3256467920"
+    },
+    {
+      "name": "OEM SFP+-10G-SRDP revA",
+      "file": "bin/lib/OEM_SFP-10G-SRDP.bin",
+      "vendor": "OEM",
+      "pn": "SFP+-10G-SRDP",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #2236940797"
+    },
+    {
+      "name": "OEM SFP+-1696-2357 revA",
+      "file": "bin/lib/OEM_SFP-1696-2357.bin",
+      "vendor": "OEM",
+      "pn": "SFP+-1696-2357",
+      "note": "10G ER 1550nm 40km",
+      "src": "freetimedb #2130731964"
+    },
+    {
+      "name": "OEM SFP+DA3 rev1.0",
+      "file": "bin/lib/OEM_SFP-DA3.bin",
+      "vendor": "OEM",
+      "pn": "SFP+DA3",
+      "note": "10G DAC 1m",
+      "src": "freetimedb #3665436780"
+    },
+    {
+      "name": "OEM SFP10-LR revA",
+      "file": "bin/lib/OEM_SFP10-LR.bin",
+      "vendor": "OEM",
+      "pn": "SFP10-LR",
+      "note": "10G LR 1310nm 10km",
+      "src": "freetimedb #3121675953"
+    },
+    {
+      "name": "OEM SPT-PC51TG-70D rev0001",
+      "file": "bin/lib/OEM_SPT-PC51TG-70D.bin",
+      "vendor": "OEM",
+      "pn": "SPT-PC51TG-70D",
+      "note": "10G 1510nm 70km",
+      "src": "freetimedb #499494566"
+    },
+    {
+      "name": "OEM XFP-10G-BX10-U revB",
+      "file": "bin/lib/OEM_XFP-10G-BX10-U.bin",
+      "vendor": "OEM",
+      "pn": "XFP-10G-BX10-U",
+      "note": "10G LR 1270nm 20km",
+      "src": "freetimedb #3740238138"
+    },
+    {
+      "name": "OPTCORE SFPP-T rev1",
+      "file": "bin/lib/OPTCORE_SFPP-T.bin",
+      "vendor": "OPTCORE",
+      "pn": "SFPP-T",
+      "note": "10G SR 850nm 300m",
+      "src": "freetimedb #368317021"
+    },
+    {
+      "name": "OPTEC-EXTREME P.1396.10",
+      "file": "bin/lib/OPTEC-EXTREME_P-1396-10.bin",
+      "vendor": "OPTEC-EXTREME",
+      "pn": "P.1396.10",
+      "note": "10G LR 1310nm 10km",
+      "src": "freetimedb #653480421"
+    },
+    {
+      "name": "SKEO SKSP10W103320LD revB",
+      "file": "bin/lib/SKEO_SKSP10W103320LD.bin",
+      "vendor": "SKEO",
+      "pn": "SKSP10W103320LD",
+      "note": "10G LR 1330nm 20km",
+      "src": "freetimedb #906630999"
+    },
+    {
+      "name": "SNR SFP+C51-70 rev1.0",
+      "file": "bin/lib/SNR_SFP-C51-70.bin",
+      "vendor": "SNR",
+      "pn": "SFP+C51-70",
+      "note": "10G 1510nm 70km",
+      "src": "freetimedb #2089179526"
+    },
+    {
+      "name": "SOURCEPHOTONICS SPP10E-LRCDFF-AY rev10",
+      "file": "bin/lib/SOURCEPHOTONICS_SPP10E-LRCDFF-AY.bin",
+      "vendor": "SOURCEPHOTONICS",
+      "pn": "SPP10E-LRCDFF-AY",
+      "note": "10G LR 1310nm 10km",
+      "src": "freetimedb #2432258038"
+    },
+    {
+      "name": "Tyco Electronics 2074977-2 revE",
+      "file": "bin/lib/Tyco-Electronics_2074977-2.bin",
+      "vendor": "Tyco Electronics",
+      "pn": "2074977-2",
+      "note": "10G DAC 3m",
+      "src": "freetimedb #3383374322"
+    }
+  ]
+}

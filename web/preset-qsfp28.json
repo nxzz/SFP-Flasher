@@ -1,0 +1,5 @@
+{
+  "_comment": "QSFP28(100G・SFF-8636 識別子0x11 等)書込用プリセット EEPROM。file は preset-qsfp28.json からの相対パス。bin は bin/qsfp/ 配下に配置。実 SN は書込時に自動維持。",
+  "_form": "このファイルのエントリは UI の QSFP28 トグルで表示されます（form 読込時に自動付与=QSFP28）。",
+  "presets": []
+}
